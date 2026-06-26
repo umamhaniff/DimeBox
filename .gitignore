@@ -1,0 +1,54 @@
+# ==========================================
+# DimeBox Monorepo - Root Git Ignore Protocol
+# ==========================================
+
+# 1. Environment Secrets (CRITICAL SECURITY)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env
+
+# 2. Node / React Frontend Dependencies & Outputs
+node_modules/
+/frontend/node_modules/
+/frontend/dist/
+/frontend/build/
+.npm
+.eslintcache
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 3. Python Backend Dependencies & Cache
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+env/
+/backend/.venv/
+/backend/venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# 4. IDE / Editor Specifics
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+# Keep VS Code extensions recommendation, ignore local settings
+.vscode/*
+!.vscode/extensions.json
+
+# 5. System specific
+.DS_Store
+Thumbs.db
+
+typing.md

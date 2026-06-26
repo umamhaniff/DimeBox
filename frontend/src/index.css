@@ -1,0 +1,183 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-hud-bg: hsl(222 47% 4%);
+  --color-hud-panel: hsl(222 35% 8%);
+  --color-hud-panel-light: hsl(222 25% 14%);
+  --color-hud-border: hsl(217 30% 18%);
+  --color-hud-border-active: hsl(185 100% 50%);
+  --color-hud-text: hsl(215 20% 75%);
+  --color-hud-text-bright: hsl(210 40% 98%);
+  --color-hud-text-muted: hsl(215 15% 50%);
+  
+  --color-neon-cyan: hsl(185 100% 50%);
+  --color-neon-cyan-dim: hsl(185 100% 50% / 0.15);
+  --color-neon-purple: hsl(285 100% 50%);
+  --color-neon-purple-dim: hsl(285 100% 50% / 0.15);
+  --color-neon-green: hsl(110 100% 50%);
+  --color-neon-green-dim: hsl(110 100% 50% / 0.15);
+  --color-neon-yellow: hsl(50 100% 50%);
+  --color-neon-yellow-dim: hsl(50 100% 50% / 0.15);
+  --color-neon-red: hsl(347 100% 50%);
+  --color-neon-red-dim: hsl(347 100% 50% / 0.15);
+  
+  --font-hud: "Space Grotesk", "Outfit", system-ui, -apple-system, sans-serif;
+  --font-sans: "Outfit", system-ui, -apple-system, sans-serif;
+  
+  --animate-neon-pulse: neon-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --animate-scanline: scanline 6s linear infinite;
+  --animate-glitch: glitch 1s steps(2, start) infinite;
+  --animate-hud-fade: hud-fade 0.3s ease-out forwards;
+}
+
+@keyframes neon-pulse {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 8px hsl(185 100% 50% / 0.4), inset 0 0 4px hsl(185 100% 50% / 0.2);
+  }
+  50% {
+    opacity: 0.8;
+    box-shadow: 0 0 16px hsl(185 100% 50% / 0.6), inset 0 0 8px hsl(185 100% 50% / 0.3);
+  }
+}
+
+@keyframes scanline {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(100%);
+  }
+}
+
+@keyframes hud-fade {
+  from {
+    opacity: 0;
+    transform: scale(0.98) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Custom Base Styles for RPG HUD */
+body {
+  background-color: var(--color-hud-bg);
+  color: var(--color-hud-text);
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-hud-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-hud-border);
+  border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-neon-cyan);
+}
+
+/* Glow Utility Classes */
+.glow-cyan {
+  box-shadow: 0 0 10px hsl(185 100% 50% / 0.3);
+}
+
+.glow-purple {
+  box-shadow: 0 0 10px hsl(285 100% 50% / 0.3);
+}
+
+.glow-text-cyan {
+  text-shadow: 0 0 8px hsl(185 100% 50% / 0.5);
+}
+
+.glow-text-purple {
+  text-shadow: 0 0 8px hsl(285 100% 50% / 0.5);
+}
+
+/* Scanline Overlay for the CRT/HUD effect */
+.hud-scanline-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.hud-scanline-container::after {
+  content: " ";
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+  z-index: 99;
+  background-size: 100% 2px, 3px 100%;
+  pointer-events: none;
+}
+
+/* HUD corners */
+.hud-corner-box {
+  position: relative;
+  border: 1px solid var(--color-hud-border);
+}
+
+.hud-corner-box::before,
+.hud-corner-box::after,
+.hud-corner-box > .hud-corner-bottom::before,
+.hud-corner-box > .hud-corner-bottom::after {
+  content: "";
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-color: var(--color-neon-cyan);
+  border-style: solid;
+  pointer-events: none;
+}
+
+/* Top Left */
+.hud-corner-box::before {
+  top: -1px;
+  left: -1px;
+  border-width: 2px 0 0 2px;
+}
+
+/* Top Right */
+.hud-corner-box::after {
+  top: -1px;
+  right: -1px;
+  border-width: 2px 2px 0 0;
+}
+
+/* Bottom Left and Right wrappers */
+.hud-corner-bottom {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 0;
+}
+
+.hud-corner-bottom::before {
+  bottom: -1px;
+  left: -1px;
+  border-width: 0 0 2px 2px;
+}
+
+.hud-corner-bottom::after {
+  bottom: -1px;
+  right: -1px;
+  border-width: 0 2px 2px 0;
+}
