@@ -6,7 +6,7 @@ import json
 from datetime import date
 from app.database import get_db
 from app.auth import get_current_user_id
-from app.schemas import ItemCreate, ItemResponse, ItemUpdate, ItemStatus, ItemCategory
+from app.schemas import ItemCreate, ItemResponse, ItemUpdate, ItemStatus, ItemCategory, WishlistLinkCreate
 
 router = APIRouter(prefix="/items", tags=["Items (Vault)"])
 
@@ -21,27 +21,48 @@ async def get_items(
     """
     Retrieve all items belonging to the authenticated user.
     Supports filtering by category, status, and tag name.
-    Uses PostgreSQL JSON aggregation to fetch items and their tags in a single query.
+    Uses PostgreSQL subqueries with JSON aggregation to fetch items, their tags, and wishlist links in a single query.
     """
-    # Base query with JSON aggregation for tags
+    # Base query with high-performance subqueries for tags and wishlist links
     query = """
         SELECT i.id, i.user_id, i.name, i.category, i.status, i.image_url, 
                i.purchase_date, i.rating_worth, i.review, i.dominant_color, 
                i.expiry_reminder_months, i.wardrobe_class, i.created_at,
-               COALESCE(
-                   json_agg(
-                       json_build_object(
-                           'id', t.id, 
-                           'user_id', t.user_id, 
-                           'name', t.name, 
-                           'created_at', to_char(t.created_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"')
-                       )
-                   ) FILTER (WHERE t.id IS NOT NULL), 
-                   '[]'::json
-               ) as tags_json
+               (
+                   SELECT COALESCE(
+                       json_agg(
+                           json_build_object(
+                               'id', t.id, 
+                               'user_id', t.user_id, 
+                               'name', t.name, 
+                               'created_at', to_char(t.created_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"')
+                           )
+                       ), 
+                       '[]'::json
+                   )
+                   FROM item_tags it
+                   JOIN tags t ON it.tag_id = t.id
+                   WHERE it.item_id = i.id
+               ) as tags_json,
+               (
+                   SELECT COALESCE(
+                       json_agg(
+                           json_build_object(
+                               'id', wl.id, 
+                               'item_id', wl.item_id, 
+                               'url_link', wl.url_link, 
+                               'price', wl.price, 
+                               'is_cheapest', wl.is_cheapest, 
+                               'spec_note', wl.spec_note, 
+                               'created_at', to_char(wl.created_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"')
+                           ) ORDER BY wl.price ASC
+                       ), 
+                       '[]'::json
+                   )
+                   FROM wishlist_links wl
+                   WHERE wl.item_id = i.id
+               ) as wishlist_links_json
         FROM items i
-        LEFT JOIN item_tags it ON i.id = it.item_id
-        LEFT JOIN tags t ON it.tag_id = t.id
         WHERE i.user_id = $1
     """
     
@@ -59,21 +80,29 @@ async def get_items(
         params.append(status_filter.value)
         param_idx += 1
 
-    query += " GROUP BY i.id ORDER BY i.created_at DESC"
+    query += " ORDER BY i.created_at DESC"
     
     rows = await db.fetch(query, *params)
     
     items = []
     for row in rows:
         item_data = dict(row)
-        # Parse the JSON string or list returned by PostgreSQL for tags
+        
+        # Parse tags
         tags_data = item_data.pop("tags_json")
         if isinstance(tags_data, str):
             item_data["tags"] = json.loads(tags_data)
         else:
             item_data["tags"] = tags_data
             
-        # Optional: Filter by tag name in python if requested (or we could do it in SQL)
+        # Parse wishlist links
+        links_data = item_data.pop("wishlist_links_json")
+        if isinstance(links_data, str):
+            item_data["wishlist_links"] = json.loads(links_data)
+        else:
+            item_data["wishlist_links"] = links_data
+            
+        # Optional: Filter by tag name in python if requested
         if tag_name:
             has_tag = any(t["name"].lower() == tag_name.lower() for t in item_data["tags"])
             if not has_tag:
@@ -96,22 +125,42 @@ async def get_item(
         SELECT i.id, i.user_id, i.name, i.category, i.status, i.image_url, 
                i.purchase_date, i.rating_worth, i.review, i.dominant_color, 
                i.expiry_reminder_months, i.wardrobe_class, i.created_at,
-               COALESCE(
-                   json_agg(
-                       json_build_object(
-                           'id', t.id, 
-                           'user_id', t.user_id, 
-                           'name', t.name, 
-                           'created_at', to_char(t.created_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"')
-                       )
-                   ) FILTER (WHERE t.id IS NOT NULL), 
-                   '[]'::json
-               ) as tags_json
+               (
+                   SELECT COALESCE(
+                       json_agg(
+                           json_build_object(
+                               'id', t.id, 
+                               'user_id', t.user_id, 
+                               'name', t.name, 
+                               'created_at', to_char(t.created_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"')
+                           )
+                       ), 
+                       '[]'::json
+                   )
+                   FROM item_tags it
+                   JOIN tags t ON it.tag_id = t.id
+                   WHERE it.item_id = i.id
+               ) as tags_json,
+               (
+                   SELECT COALESCE(
+                       json_agg(
+                           json_build_object(
+                               'id', wl.id, 
+                               'item_id', wl.item_id, 
+                               'url_link', wl.url_link, 
+                               'price', wl.price, 
+                               'is_cheapest', wl.is_cheapest, 
+                               'spec_note', wl.spec_note, 
+                               'created_at', to_char(wl.created_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"')
+                           ) ORDER BY wl.price ASC
+                       ), 
+                       '[]'::json
+                   )
+                   FROM wishlist_links wl
+                   WHERE wl.item_id = i.id
+               ) as wishlist_links_json
         FROM items i
-        LEFT JOIN item_tags it ON i.id = it.item_id
-        LEFT JOIN tags t ON it.tag_id = t.id
         WHERE i.id = $1 AND i.user_id = $2
-        GROUP BY i.id
     """
     row = await db.fetchrow(query, item_id, user_id)
     if not row:
@@ -123,6 +172,10 @@ async def get_item(
     item_data = dict(row)
     tags_data = item_data.pop("tags_json")
     item_data["tags"] = json.loads(tags_data) if isinstance(tags_data, str) else tags_data
+    
+    links_data = item_data.pop("wishlist_links_json")
+    item_data["wishlist_links"] = json.loads(links_data) if isinstance(links_data, str) else links_data
+    
     return item_data
 
 @router.post("", response_model=ItemResponse, status_code=status.HTTP_201_CREATED)
@@ -132,7 +185,7 @@ async def create_item(
     db: asyncpg.Connection = Depends(get_db)
 ):
     """
-    Create a new item in the vault. If tag_ids are provided, links them.
+    Create a new item in the vault. If tag_ids or wishlist_links are provided, links them.
     """
     # Start a transaction to ensure atomicity
     async with db.transaction():
@@ -144,9 +197,7 @@ async def create_item(
                 wardrobe_class
             )
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-            RETURNING id, user_id, name, category, status, image_url, 
-                      purchase_date, rating_worth, review, dominant_color, 
-                      expiry_reminder_months, wardrobe_class, created_at
+            RETURNING id
         """
         item_row = await db.fetchrow(
             insert_item_query,
@@ -162,14 +213,11 @@ async def create_item(
             item_in.expiry_reminder_months,
             item_in.wardrobe_class.value if item_in.wardrobe_class else None
         )
-        item_data = dict(item_row)
-        item_id = item_data["id"]
+        item_id = item_row["id"]
 
         # 2. Link tags if provided
-        linked_tags = []
         if item_in.tag_ids:
-            # Verify tags belong to the user
-            verify_query = "SELECT id, user_id, name, created_at FROM tags WHERE id = ANY($1) AND user_id = $2"
+            verify_query = "SELECT id FROM tags WHERE id = ANY($1) AND user_id = $2"
             verified_tag_rows = await db.fetch(verify_query, item_in.tag_ids, user_id)
             
             if len(verified_tag_rows) != len(item_in.tag_ids):
@@ -178,16 +226,33 @@ async def create_item(
                     detail="One or more tag IDs are invalid or unauthorized"
                 )
                 
-            # Insert junction records
             insert_tag_links = """
                 INSERT INTO item_tags (item_id, tag_id)
                 SELECT $1, unnest($2::uuid[])
             """
             await db.execute(insert_tag_links, item_id, item_in.tag_ids)
-            linked_tags = [dict(row) for row in verified_tag_rows]
             
-        item_data["tags"] = linked_tags
-        return item_data
+        # 3. Insert wishlist links if provided (and status is Wishlist)
+        if item_in.status == ItemStatus.WISHLIST and item_in.wishlist_links:
+            # Sort links by price to calculate cheapest
+            sorted_links = sorted(item_in.wishlist_links, key=lambda l: l.price)
+            for idx, link in enumerate(sorted_links):
+                is_cheapest = (idx == 0)
+                insert_link_query = """
+                    INSERT INTO wishlist_links (item_id, url_link, price, is_cheapest, spec_note)
+                    VALUES ($1, $2, $3, $4, $5)
+                """
+                await db.execute(
+                    insert_link_query,
+                    item_id,
+                    link.url_link.strip(),
+                    link.price,
+                    is_cheapest,
+                    link.spec_note.strip() if link.spec_note else None
+                )
+            
+        # Fetch and return the fully populated item via get_item
+        return await get_item(item_id, user_id, db)
 
 @router.patch("/{item_id}", response_model=ItemResponse)
 async def update_item(
@@ -197,7 +262,7 @@ async def update_item(
     db: asyncpg.Connection = Depends(get_db)
 ):
     """
-    Update an item. Supports updating details and re-linking tags.
+    Update an item. Supports updating details, re-linking tags, and re-linking wishlist links.
     """
     async with db.transaction():
         # Check ownership
@@ -241,11 +306,9 @@ async def update_item(
 
         # Handle tags update if provided
         if item_in.tag_ids is not None:
-            # Delete old links
             await db.execute("DELETE FROM item_tags WHERE item_id = $1", item_id)
             
             if item_in.tag_ids:
-                # Verify and insert new links
                 verify_query = "SELECT id FROM tags WHERE id = ANY($1) AND user_id = $2"
                 verified_ids = await db.fetch(verify_query, item_in.tag_ids, user_id)
                 if len(verified_ids) != len(item_in.tag_ids):
@@ -259,6 +322,29 @@ async def update_item(
                     SELECT $1, unnest($2::uuid[])
                 """
                 await db.execute(insert_tag_links, item_id, item_in.tag_ids)
+
+        # Handle wishlist links update if provided
+        if item_in.wishlist_links is not None:
+            await db.execute("DELETE FROM wishlist_links WHERE item_id = $1", item_id)
+            
+            # If new links are provided and the item status is currently Wishlist (or updating to Wishlist)
+            target_status = item_in.status.value if item_in.status else existing_status
+            if target_status == "Wishlist" and item_in.wishlist_links:
+                sorted_links = sorted(item_in.wishlist_links, key=lambda l: l.price)
+                for idx, link in enumerate(sorted_links):
+                    is_cheapest = (idx == 0)
+                    insert_link_query = """
+                        INSERT INTO wishlist_links (item_id, url_link, price, is_cheapest, spec_note)
+                        VALUES ($1, $2, $3, $4, $5)
+                    """
+                    await db.execute(
+                        insert_link_query,
+                        item_id,
+                        link.url_link.strip(),
+                        link.price,
+                        is_cheapest,
+                        link.spec_note.strip() if link.spec_note else None
+                    )
 
         # Fetch and return fully updated item
         return await get_item(item_id, user_id, db)
@@ -334,3 +420,4 @@ async def buy_wishlist_item(
         )
         
         return await get_item(item_id, user_id, db)
+

@@ -299,7 +299,7 @@ export const Wardrobe: React.FC<WardrobeProps> = ({ onInspectItem, onDelete, onB
               Downloading wardrobe grid assets...
             </div>
           ) : filteredItems.length > 0 ? (
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
               {filteredItems.map((item) => (
                 <ItemCard
                   key={item.id}

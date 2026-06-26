@@ -7,7 +7,7 @@
 *   **Backend:** Python (FastAPI)
 *   **Database:** Supabase (PostgreSQL)
 *   **Storage:** Cloudinary
-*   **Hosting:** Vercel (Frontend) & Railway (Backend)
+*   **Hosting:** Vercel (Frontend & Backend Serverless)
 
 ---
 
@@ -185,6 +185,20 @@ CREATE TABLE outfit_items (
 *   **Key Learnings & Decisions:**
     *   **Color Harmony circular HSL check:** Implemented a robust client-side check that flags saturation-based color clashes (discordant hues between 35 and 145 degrees apart) unless neutral tones (gray, beige, black, white) are present. This ensures beautiful outfit matching.
     *   **Nested JSON Aggregation:** Leveraged PostgreSQL subqueries with `json_agg` and `json_build_object` to fetch hierarchical relationships (e.g. Outfits -> Items -> Tags) in a single high-speed database call, maximizing performance on low-RAM infrastructure.
+
+### Session 4: Responsive Alignment, Worth-it Analytics, Cloudinary & PWA Cache (2026-06-27)
+*   **Status:** Phase 6 COMPLETED. All core roadmap phases are now fully implemented and verified.
+*   **Key Deliverables:**
+    1.  **Favicon & SEO PWA:** Custom-built an isometric neon holographic SVG favicon (`favicon.svg`) and updated `index.html` with title, PWA viewport settings, and theme color tags.
+    2.  **Responsive Layout Chassis:** Redesigned `App.tsx` and `Dashboard.tsx` to support a sidebar-based desktop dashboard with an RPG player profile card and multi-column grids for items on desktop, while maintaining a pure mobile-first layout on phone view.
+    3.  **Treasury HUD & Worth-it Analytics:** Integrated the `wishlist_links` (Bounty Radar) database model in backend schemas and routers using single-query subquery JSON aggregation. Implemented **Bounty Gold Required** calculations (sum of cheapest wishlist prices) and **S-Class Legendary Worth Ratio** on the Profile tab (`Profile.tsx`), and rendered target price/shop link buttons on item cards (`ItemCard.tsx`).
+    4.  **Cloudinary Integration & Canvas Compression:** Built a high-performance HTML5 Canvas client-side compressor (pure vanilla JS, zero dependencies) and Cloudinary upload handler in `ItemModal.tsx`, complete with a manual URL fallback and env variable instruction notice.
+    5.  **PWA Service Worker for Offline Mode:** Developed a pure vanilla `/sw.js` implementing a **stale-while-revalidate** strategy for static assets and **network-first, cache-fallback** for API requests, delivering a stable **Read-Only Offline Mode** with write restrictions.
+    6.  **Verification:** Verified production builds and confirmed 100% type-safety and successful compilation on Vite.
+*   **Key Learnings & Decisions:**
+    *   **Vanilla Service Worker & Canvas Compressor:** Opted for pure vanilla implementations for both PWA caching and image compression to avoid installing heavy npm packages. This minimizes bundler size, optimizes compile time, and prevents memory overhead on low-RAM infrastructure.
+    *   **Cheapest Link SQL Ordering:** Implemented ordering by price in the aggregated subquery of `wishlist_links` so the cheapest option is always the first element, simplifying the client-side parsing of prices.
+
 
 
 

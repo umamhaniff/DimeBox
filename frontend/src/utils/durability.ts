@@ -3,6 +3,16 @@ export interface Tag {
   name: string
 }
 
+export interface WishlistLink {
+  id: string
+  item_id: string
+  url_link: string
+  price: number
+  is_cheapest: boolean
+  spec_note?: string
+  created_at: string
+}
+
 export interface Item {
   id: string
   name: string
@@ -17,7 +27,9 @@ export interface Item {
   wardrobe_class?: 'Top' | 'Bottom' | 'Outer' | 'Shoes'
   created_at: string
   tags: Tag[]
+  wishlist_links?: WishlistLink[]
 }
+
 
 export interface DurabilityInfo {
   percentage: number

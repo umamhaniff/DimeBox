@@ -4,6 +4,78 @@ import { apiClient } from '../utils/apiClient'
 
 import { X, Plus, Tag as TagIcon, Sparkles } from 'lucide-react'
 
+// Client-side image compression using HTML5 Canvas (zero-dependency)
+const compressImage = (file: File): Promise<Blob> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.readAsDataURL(file)
+    reader.onload = (event) => {
+      const img = new Image()
+      img.src = event.target?.result as string
+      img.onload = () => {
+        const canvas = document.createElement('canvas')
+        const MAX_WIDTH = 800
+        const MAX_HEIGHT = 600
+        let width = img.width
+        let height = img.height
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width
+            width = MAX_WIDTH
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height
+            height = MAX_HEIGHT
+          }
+        }
+
+        canvas.width = width
+        canvas.height = height
+        const ctx = canvas.getContext('2d')
+        ctx?.drawImage(img, 0, 0, width, height)
+        
+        canvas.toBlob(
+          (blob) => {
+            if (blob) resolve(blob)
+            else reject(new Error('Canvas compression failed'))
+          },
+          'image/jpeg',
+          0.7
+        )
+      }
+    }
+    reader.onerror = (err) => reject(err)
+  })
+}
+
+// Upload to Cloudinary using unsigned upload preset
+const uploadToCloudinary = async (blob: Blob): Promise<string> => {
+  const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME
+  const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET
+
+  if (!cloudName || !uploadPreset) {
+    throw new Error('Cloudinary credentials are not configured in environment')
+  }
+
+  const formData = new FormData()
+  formData.append('file', blob, 'scan.jpg')
+  formData.append('upload_preset', uploadPreset)
+
+  const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+    method: 'POST',
+    body: formData,
+  })
+
+  if (!response.ok) {
+    throw new Error('Failed to upload image to Cloudinary')
+  }
+
+  const data = await response.json()
+  return data.secure_url
+}
+
 interface ItemModalProps {
   isOpen: boolean
   onClose: () => void
@@ -22,6 +94,15 @@ export const ItemModal: React.FC<ItemModalProps> = ({ isOpen, onClose, onSave, i
   const [dominantColor, setDominantColor] = useState('#000000')
   const [expiryReminderMonths, setExpiryReminderMonths] = useState<number>(12)
   const [wardrobeClass, setWardrobeClass] = useState<'Top' | 'Bottom' | 'Outer' | 'Shoes'>('Top')
+  
+  // Wishlist details
+  const [wishlistUrl, setWishlistUrl] = useState('')
+  const [wishlistPrice, setWishlistPrice] = useState<number | string>('')
+  const [wishlistNote, setWishlistNote] = useState('')
+  
+  // Upload states
+  const [uploading, setUploading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState<string | null>(null)
   
   // Tag management
   const [allTags, setAllTags] = useState<Tag[]>([])
@@ -52,6 +133,17 @@ export const ItemModal: React.FC<ItemModalProps> = ({ isOpen, onClose, onSave, i
       setExpiryReminderMonths(itemToEdit.expiry_reminder_months ?? 12)
       setWardrobeClass(itemToEdit.wardrobe_class ?? 'Top')
       setSelectedTagIds(itemToEdit.tags.map((t) => t.id))
+      
+      // Populate wishlist link data if present
+      if (itemToEdit.wishlist_links && itemToEdit.wishlist_links.length > 0) {
+        setWishlistUrl(itemToEdit.wishlist_links[0].url_link)
+        setWishlistPrice(itemToEdit.wishlist_links[0].price)
+        setWishlistNote(itemToEdit.wishlist_links[0].spec_note ?? '')
+      } else {
+        setWishlistUrl('')
+        setWishlistPrice('')
+        setWishlistNote('')
+      }
     } else {
       // Reset form
       setName('')
@@ -65,6 +157,9 @@ export const ItemModal: React.FC<ItemModalProps> = ({ isOpen, onClose, onSave, i
       setExpiryReminderMonths(12)
       setWardrobeClass('Top')
       setSelectedTagIds([])
+      setWishlistUrl('')
+      setWishlistPrice('')
+      setWishlistNote('')
     }
     setError(null)
   }, [itemToEdit, isOpen])
@@ -102,6 +197,34 @@ export const ItemModal: React.FC<ItemModalProps> = ({ isOpen, onClose, onSave, i
     )
   }
 
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setUploading(true)
+    setUploadProgress('Compressing physical asset...')
+    setError(null)
+
+    try {
+      // 1. Compress image
+      const compressedBlob = await compressImage(file)
+      
+      // 2. Upload to Cloudinary
+      setUploadProgress('Uploading to pocket dimension...')
+      const uploadedUrl = await uploadToCloudinary(compressedBlob)
+      
+      // 3. Set image URL state
+      setImageUrl(uploadedUrl)
+      setUploadProgress('Scan complete!')
+    } catch (err: any) {
+      console.error(err)
+      setError(err.message || 'Failed to process and upload image. Please verify environment configurations.')
+      setUploadProgress(null)
+    } finally {
+      setUploading(false)
+    }
+  }
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
     setSaveLoading(true)
@@ -119,6 +242,13 @@ export const ItemModal: React.FC<ItemModalProps> = ({ isOpen, onClose, onSave, i
       expiry_reminder_months: category === 'Toiletries' ? expiryReminderMonths : null,
       wardrobe_class: category === 'Wardrobe' ? wardrobeClass : null,
       tag_ids: selectedTagIds,
+      wishlist_links: status === 'Wishlist' && wishlistUrl ? [
+        {
+          url_link: wishlistUrl.trim(),
+          price: wishlistPrice !== '' ? Number(wishlistPrice) : 0,
+          spec_note: wishlistNote.trim() || null
+        }
+      ] : status === 'Wishlist' ? [] : null,
     }
 
     try {
@@ -240,18 +370,54 @@ export const ItemModal: React.FC<ItemModalProps> = ({ isOpen, onClose, onSave, i
             </div>
           )}
 
-          {/* Image URL */}
-          <div className="space-y-1">
+          {/* Image Upload / Scan */}
+          <div className="space-y-2">
             <label className="block text-[11px] uppercase tracking-wider text-hud-text-muted">
-              Visual Scan URL (Photo Link)
+              Visual Scan (Equipment Image)
             </label>
-            <input
-              type="url"
-              placeholder="https://images.unsplash.com/... (optional)"
-              value={imageUrl}
-              onChange={(e) => setImageUrl(e.target.value)}
-              className="w-full bg-hud-bg border border-hud-border rounded px-3 py-2 text-sm text-hud-text-bright placeholder-hud-text-muted/30 focus:outline-none focus:border-neon-cyan transition-colors font-sans"
-            />
+            
+            {/* File upload container */}
+            <div className="border border-dashed border-hud-border hover:border-neon-cyan/50 rounded p-4 bg-hud-bg/20 transition-all text-center relative flex flex-col items-center justify-center min-h-[90px]">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                disabled={uploading}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed z-20"
+              />
+              
+              <div className="space-y-1 z-10 pointer-events-none">
+                <span className="text-xs font-bold text-neon-cyan block font-hud">
+                  {uploading 
+                    ? uploadProgress 
+                    : imageUrl 
+                    ? '📁 Visual Scan Linked [Click to Re-upload]' 
+                    : '📷 Upload Physical Scan (Drag & Drop or Click)'}
+                </span>
+                <span className="text-[9px] text-hud-text-muted block uppercase tracking-wider">
+                  Supports PNG, JPG, WEBP • Auto client-compressed to &lt; 100KB
+                </span>
+              </div>
+            </div>
+
+            {/* Manual URL fallback */}
+            <div className="space-y-1 mt-2">
+              <label className="block text-[9px] uppercase tracking-wider text-hud-text-muted">
+                Or Manual Scan URL (Photo Link)
+              </label>
+              <input
+                type="url"
+                placeholder="https://images.unsplash.com/... (optional)"
+                value={imageUrl}
+                onChange={(e) => setImageUrl(e.target.value)}
+                className="w-full bg-hud-bg border border-hud-border rounded px-3 py-2 text-xs text-hud-text-bright placeholder-hud-text-muted/30 focus:outline-none focus:border-neon-cyan transition-colors font-sans"
+              />
+              {!import.meta.env.VITE_CLOUDINARY_CLOUD_NAME && (
+                <span className="text-[8px] text-hud-text-muted block mt-1 leading-normal font-sans">
+                  💡 Cloudinary upload is inactive. Add <code className="text-neon-yellow">VITE_CLOUDINARY_CLOUD_NAME</code> & <code className="text-neon-yellow">VITE_CLOUDINARY_UPLOAD_PRESET</code> in <code className="text-hud-text-bright">.env</code> to enable automatic physical photo uploads.
+                </span>
+              )}
+            </div>
           </div>
 
           {/* Conditionally Render: Toiletries Lifespan */}
@@ -323,6 +489,62 @@ export const ItemModal: React.FC<ItemModalProps> = ({ isOpen, onClose, onSave, i
                   value={review}
                   onChange={(e) => setReview(e.target.value)}
                   className="w-full bg-hud-bg border border-hud-border rounded px-3 py-2 text-xs text-hud-text-bright placeholder-hud-text-muted/30 focus:outline-none focus:border-neon-cyan transition-colors font-sans h-16 resize-none"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Conditionally Render: Wishlist Details */}
+          {status === 'Wishlist' && (
+            <div className="border border-hud-border bg-hud-bg/30 p-3 rounded space-y-3">
+              <span className="text-[10px] uppercase font-bold text-neon-yellow tracking-wider block border-b border-hud-border pb-1 font-hud">
+                Bounty Radar Parameters
+              </span>
+              
+              <div className="grid grid-cols-2 gap-4">
+                {/* Target Price */}
+                <div className="space-y-1">
+                  <label className="block text-[10px] uppercase tracking-wider text-hud-text-muted">
+                    Target Price (Gold / IDR)
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    min={0}
+                    placeholder="e.g. 1500000"
+                    value={wishlistPrice}
+                    onChange={(e) => setWishlistPrice(e.target.value)}
+                    className="w-full bg-hud-bg border border-hud-border rounded px-3 py-1.5 text-sm text-hud-text-bright focus:outline-none focus:border-neon-cyan transition-colors font-mono"
+                  />
+                </div>
+
+                {/* Target Spec Note */}
+                <div className="space-y-1">
+                  <label className="block text-[10px] uppercase tracking-wider text-hud-text-muted">
+                    Target Spec / Note
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Size M, Black"
+                    value={wishlistNote}
+                    onChange={(e) => setWishlistNote(e.target.value)}
+                    className="w-full bg-hud-bg border border-hud-border rounded px-3 py-1.5 text-sm text-hud-text-bright focus:outline-none focus:border-neon-cyan transition-colors font-sans"
+                  />
+                </div>
+              </div>
+
+              {/* Target Shop Link */}
+              <div className="space-y-1">
+                <label className="block text-[10px] uppercase tracking-wider text-hud-text-muted">
+                  Target Shop / Source URL
+                </label>
+                <input
+                  type="url"
+                  required
+                  placeholder="https://tokopedia.com/... or https://..."
+                  value={wishlistUrl}
+                  onChange={(e) => setWishlistUrl(e.target.value)}
+                  className="w-full bg-hud-bg border border-hud-border rounded px-3 py-1.5 text-xs text-hud-text-bright placeholder-hud-text-muted/30 focus:outline-none focus:border-neon-cyan transition-colors font-sans"
                 />
               </div>
             </div>

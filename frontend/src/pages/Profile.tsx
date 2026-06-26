@@ -57,6 +57,14 @@ export const Profile: React.FC<ProfileProps> = ({ refreshTrigger, onInspectItem 
   const ownedCount = items.filter((item) => item.status === 'Owned').length
   const wishlistCount = items.filter((item) => item.status === 'Wishlist').length
 
+  // Calculate Bounty Gold Required: sum of prices of all wishlist items (cheapest link)
+  const bountyGoldRequired = items
+    .filter((item) => item.status === 'Wishlist')
+    .reduce((sum, item) => {
+      const cheapestLink = item.wishlist_links?.find((l) => l.is_cheapest) || item.wishlist_links?.[0]
+      return sum + (cheapestLink?.price || 0)
+    }, 0)
+
   return (
     <div className="p-6 space-y-6 animate-hud-fade font-hud">
       
@@ -89,7 +97,59 @@ export const Profile: React.FC<ProfileProps> = ({ refreshTrigger, onInspectItem 
         </div>
       </div>
 
-      {/* 2. Legendary Investment Matrix (Rating 5 items) */}
+      {/* 2. Treasury & Bounty Analytics */}
+      <div className="hud-corner-box bg-hud-panel border-hud-border p-5 rounded relative">
+        <div className="hud-corner-bottom" />
+        <div className="flex justify-between items-center mb-4 border-b border-hud-border pb-2.5">
+          <h3 className="text-xs font-bold text-hud-text-bright tracking-wider uppercase flex items-center gap-1.5 font-hud">
+            <Award className="w-4 h-4 text-neon-cyan animate-pulse animate-duration-2000" />
+            Treasury & Bounty Analytics
+          </h3>
+          <span className="text-[9px] text-hud-text-muted font-mono uppercase tracking-widest font-bold">Treasury HUD</span>
+        </div>
+
+        <div className="space-y-4">
+          {/* Bounty Gold Required */}
+          <div className="bg-hud-bg/50 border border-hud-border p-3.5 rounded flex justify-between items-center gap-4">
+            <div>
+              <span className="text-[9px] text-hud-text-muted uppercase tracking-wider block font-mono">Bounty Gold Required (Target Dana)</span>
+              <span className="text-base font-bold text-neon-yellow font-mono mt-0.5 block">
+                💰 {bountyGoldRequired.toLocaleString('id-ID')} <span className="text-[9px] text-hud-text-muted font-sans font-normal">GOLD / IDR</span>
+              </span>
+            </div>
+            <div className="text-right">
+              <span className="text-[9px] text-hud-text-muted uppercase tracking-wider block font-mono">Avg Target Cost</span>
+              <span className="text-xs font-mono font-bold text-hud-text-bright">
+                {wishlistCount > 0 ? Math.round(bountyGoldRequired / wishlistCount).toLocaleString('id-ID') : 0} / item
+              </span>
+            </div>
+          </div>
+
+          {/* S-Class Legendary Investment Ratio */}
+          <div className="bg-hud-bg/50 border border-hud-border p-3.5 rounded">
+            <div className="flex justify-between items-center mb-2">
+              <div>
+                <span className="text-[9px] text-hud-text-muted uppercase tracking-wider block font-mono">Legendary Worth Ratio (S-Class Assets)</span>
+                <span className="text-xs font-mono font-bold text-neon-green mt-0.5 block">
+                  {ownedCount > 0 ? Math.round((legendaryItems.length / ownedCount) * 100) : 0}% S-Class Asset Rate
+                </span>
+              </div>
+              <div className="text-right font-mono text-xs text-hud-text-bright font-bold">
+                {legendaryItems.length} <span className="text-hud-text-muted">/</span> {ownedCount} assets
+              </div>
+            </div>
+            {/* Progress bar */}
+            <div className="w-full bg-hud-bg h-1 rounded-full overflow-hidden border border-hud-border">
+              <div 
+                className="bg-neon-green h-full rounded-full transition-all duration-500" 
+                style={{ width: `${ownedCount > 0 ? (legendaryItems.length / ownedCount) * 100 : 0}%` }}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 3. Legendary Investment Matrix (Rating 5 items) */}
       <div className="hud-corner-box bg-hud-panel border-hud-border p-5 rounded relative">
         <div className="hud-corner-bottom" />
         <div className="flex justify-between items-center mb-4 border-b border-hud-border pb-2.5">

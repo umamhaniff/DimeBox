@@ -35,7 +35,25 @@ class TagResponse(TagBase):
     class Config:
         from_attributes = True
 
-# 3. ITEM SCHEMAS
+# 3. WISHLIST LINK SCHEMAS
+class WishlistLinkBase(BaseModel):
+    url_link: str = Field(..., description="Target shop or source URL link")
+    price: float = Field(..., ge=0, description="Acquisition price of the item")
+    spec_note: Optional[str] = Field(None, description="Specification notes or details")
+
+class WishlistLinkCreate(WishlistLinkBase):
+    pass
+
+class WishlistLinkResponse(WishlistLinkBase):
+    id: UUID
+    item_id: UUID
+    is_cheapest: bool
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+# 4. ITEM SCHEMAS
 class ItemBase(BaseModel):
     name: str = Field(..., max_length=255, description="Name of the physical item")
     category: ItemCategory
@@ -50,6 +68,7 @@ class ItemBase(BaseModel):
 
 class ItemCreate(ItemBase):
     tag_ids: Optional[List[UUID]] = Field(default_factory=list, description="Associated tag IDs")
+    wishlist_links: Optional[List[WishlistLinkCreate]] = Field(default_factory=list, description="Associated wishlist links")
 
 class ItemUpdate(BaseModel):
     name: Optional[str] = Field(None, max_length=255)
@@ -63,15 +82,18 @@ class ItemUpdate(BaseModel):
     expiry_reminder_months: Optional[int] = None
     wardrobe_class: Optional[WardrobeClass] = None
     tag_ids: Optional[List[UUID]] = None
+    wishlist_links: Optional[List[WishlistLinkCreate]] = None
 
 class ItemResponse(ItemBase):
     id: UUID
     user_id: UUID
     created_at: datetime
     tags: List[TagResponse] = []
+    wishlist_links: List[WishlistLinkResponse] = []
 
     class Config:
         from_attributes = True
+
 
 
 # 4. OUTFIT SCHEMAS

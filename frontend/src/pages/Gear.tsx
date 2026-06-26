@@ -176,7 +176,7 @@ export const Gear: React.FC<GearProps> = ({ onInspectItem, onDelete, onBuy, refr
           Downloading gear grid assets...
         </div>
       ) : filteredItems.length > 0 ? (
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
           {filteredItems.map((item) => (
             <ItemCard
               key={item.id}

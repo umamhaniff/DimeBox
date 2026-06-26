@@ -121,6 +121,33 @@ export const ItemCard: React.FC<ItemCardProps> = ({ item, onEdit, onDelete, onBu
         </div>
       )}
 
+      {/* Target Price & Shop Link for Wishlist */}
+      {item.status === 'Wishlist' && item.wishlist_links && item.wishlist_links.length > 0 && (
+        <div className="space-y-1 mb-3">
+          <div className="flex justify-between text-[10px] font-mono">
+            <span className="text-hud-text-muted uppercase tracking-wider">Target Price</span>
+            <span className="text-neon-yellow font-bold">
+              💰 Rp {item.wishlist_links[0].price.toLocaleString('id-ID')}
+            </span>
+          </div>
+          {item.wishlist_links[0].spec_note && (
+            <div className="text-[9px] text-hud-text-muted font-mono italic truncate">
+              Note: {item.wishlist_links[0].spec_note}
+            </div>
+          )}
+          {item.wishlist_links[0].url_link && (
+            <a
+              href={item.wishlist_links[0].url_link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[9px] text-neon-cyan hover:bg-neon-cyan hover:text-hud-bg font-bold uppercase tracking-wider truncate block font-mono mt-1.5 border border-neon-cyan/30 rounded bg-neon-cyan-dim/5 py-1 text-center transition-all cursor-pointer"
+            >
+              View Shop Link ↗
+            </a>
+          )}
+        </div>
+      )}
+
       {/* Worth Rating (Stars) */}
       {item.status === 'Owned' && item.rating_worth && (
         <div className="flex items-center gap-0.5 mb-3">
