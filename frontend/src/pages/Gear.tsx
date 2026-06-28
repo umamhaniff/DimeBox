@@ -16,6 +16,7 @@ export const Gear: React.FC<GearProps> = ({ onInspectItem, onDelete, onBuy, refr
   const [items, setItems] = useState<Item[]>([])
   const [tags, setTags] = useState<Tag[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [selectedTag, setSelectedTag] = useState<string | null>(null)
   const [statusFilter, setStatusFilter] = useState<'All' | 'Owned' | 'Wishlist'>('All')
@@ -27,6 +28,7 @@ export const Gear: React.FC<GearProps> = ({ onInspectItem, onDelete, onBuy, refr
 
   const fetchData = async () => {
     setLoading(true)
+    setError(null)
     try {
       // Fetch both items (all, we will filter Gear & Toiletries in frontend) and all tags
       const [itemsData, tagsData] = await Promise.all([
@@ -40,8 +42,9 @@ export const Gear: React.FC<GearProps> = ({ onInspectItem, onDelete, onBuy, refr
       )
       setItems(gearAndToiletries)
       setTags(tagsData)
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to fetch gear data:', err)
+      setError(err.message || 'Failed to sync with the pocket dimension.')
     } finally {
       setLoading(false)
     }
@@ -63,6 +66,21 @@ export const Gear: React.FC<GearProps> = ({ onInspectItem, onDelete, onBuy, refr
 
   return (
     <div className="p-6 space-y-6 animate-hud-fade font-hud">
+      
+      {error && (
+        <div className="hud-corner-box bg-neon-red-dim border border-neon-red p-4 rounded text-neon-red font-mono text-xs relative my-2">
+          <div className="hud-corner-bottom" />
+          <span className="font-bold block mb-1">[SYSTEM ALERT: LINK FAILURE]</span>
+          <p className="mb-3">{error}</p>
+          <button
+            type="button"
+            onClick={() => fetchData()}
+            className="px-3 py-1.5 rounded bg-neon-red text-hud-bg font-bold uppercase tracking-wider text-[10px] hover:bg-hud-text-bright hover:text-neon-red transition-all cursor-pointer"
+          >
+            Retry Connection
+          </button>
+        </div>
+      )}
       
       {/* 1. Header with Stats */}
       <div className="flex justify-between items-center border-b border-hud-border pb-3">

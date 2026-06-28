@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import type { Item, Tag } from '../utils/durability'
 import { apiClient } from '../utils/apiClient'
 
-import { X, Plus, Tag as TagIcon, Sparkles } from 'lucide-react'
+import { X, Plus, Tag as TagIcon, Sparkles, Camera, RefreshCw } from 'lucide-react'
 
 // Client-side image compression using HTML5 Canvas (zero-dependency)
 const compressImage = (file: File): Promise<Blob> => {
@@ -76,6 +76,30 @@ const uploadToCloudinary = async (blob: Blob): Promise<string> => {
   return data.secure_url
 }
 
+// Web Audio API synth beep for camera shutter sound
+const playCaptureSound = () => {
+  try {
+    const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)()
+    const oscillator = audioCtx.createOscillator()
+    const gainNode = audioCtx.createGain()
+    
+    oscillator.type = 'sine'
+    oscillator.frequency.setValueAtTime(880, audioCtx.currentTime)
+    oscillator.frequency.exponentialRampToValueAtTime(220, audioCtx.currentTime + 0.15)
+    
+    gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime)
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15)
+    
+    oscillator.connect(gainNode)
+    gainNode.connect(audioCtx.destination)
+    
+    oscillator.start()
+    oscillator.stop(audioCtx.currentTime + 0.15)
+  } catch (e) {
+    console.warn('Web Audio API not supported or blocked by autoplay policy:', e)
+  }
+}
+
 interface ItemModalProps {
   isOpen: boolean
   onClose: () => void
@@ -111,6 +135,135 @@ export const ItemModal: React.FC<ItemModalProps> = ({ isOpen, onClose, onSave, i
   const [tagLoading, setTagLoading] = useState(false)
   const [saveLoading, setSaveLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Camera states
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const [isCameraActive, setIsCameraActive] = useState(false)
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null)
+  const [facingMode, setFacingMode] = useState<'user' | 'environment'>('environment')
+  const [flashActive, setFlashActive] = useState(false)
+  const [isOnline, setIsOnline] = useState(navigator.onLine)
+
+  // Monitor online status
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true)
+    const handleOffline = () => setIsOnline(false)
+    window.addEventListener('online', handleOnline)
+    window.addEventListener('offline', handleOffline)
+    return () => {
+      window.removeEventListener('online', handleOnline)
+      window.removeEventListener('offline', handleOffline)
+    }
+  }, [])
+
+  // Auto-stop camera on unmount or when modal closes
+  useEffect(() => {
+    return () => {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach((track) => track.stop())
+      }
+    }
+  }, [cameraStream])
+
+  useEffect(() => {
+    if (!isOpen && cameraStream) {
+      cameraStream.getTracks().forEach((track) => track.stop())
+      setCameraStream(null)
+      setIsCameraActive(false)
+    }
+  }, [isOpen, cameraStream])
+
+  const startCamera = async (mode = facingMode) => {
+    setError(null)
+    setIsCameraActive(true)
+    
+    if (cameraStream) {
+      cameraStream.getTracks().forEach((track) => track.stop())
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: mode,
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
+        audio: false,
+      })
+      setCameraStream(stream)
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream
+      }
+    } catch (err: any) {
+      console.error('Error accessing camera:', err)
+      setError('Failed to access camera. Please check camera permissions.')
+      setIsCameraActive(false)
+    }
+  }
+
+  const stopCamera = () => {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach((track) => track.stop())
+      setCameraStream(null)
+    }
+    setIsCameraActive(false)
+  }
+
+  const toggleCamera = () => {
+    const nextMode = facingMode === 'environment' ? 'user' : 'environment'
+    setFacingMode(nextMode)
+    startCamera(nextMode)
+  }
+
+  const handleCapture = async () => {
+    if (!videoRef.current) return
+
+    setUploading(true)
+    setUploadProgress('Capturing scan...')
+    playCaptureSound()
+    setFlashActive(true)
+    setTimeout(() => setFlashActive(false), 150)
+
+    try {
+      const video = videoRef.current
+      const canvas = document.createElement('canvas')
+      canvas.width = video.videoWidth || 640
+      canvas.height = video.videoHeight || 480
+      
+      const ctx = canvas.getContext('2d')
+      if (ctx) {
+        if (facingMode === 'user') {
+          ctx.translate(canvas.width, 0)
+          ctx.scale(-1, 1)
+        }
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+      }
+
+      setUploadProgress('Compressing physical asset...')
+      const blob = await new Promise<Blob>((resolve, reject) => {
+        canvas.toBlob(
+          (b) => {
+            if (b) resolve(b)
+            else reject(new Error('Failed to capture frame'))
+          },
+          'image/jpeg',
+          0.7
+        )
+      })
+
+      setUploadProgress('Uploading to pocket dimension...')
+      const uploadedUrl = await uploadToCloudinary(blob)
+      setImageUrl(uploadedUrl)
+      setUploadProgress('Scan complete!')
+      stopCamera()
+    } catch (err: any) {
+      console.error(err)
+      setError(err.message || 'Failed to capture and upload image.')
+      setUploadProgress(null)
+    } finally {
+      setUploading(false)
+    }
+  }
 
   // 1. Fetch tags belonging to the user
   useEffect(() => {
@@ -376,29 +529,133 @@ export const ItemModal: React.FC<ItemModalProps> = ({ isOpen, onClose, onSave, i
               Visual Scan (Equipment Image)
             </label>
             
-            {/* File upload container */}
-            <div className="border border-dashed border-hud-border hover:border-neon-cyan/50 rounded p-4 bg-hud-bg/20 transition-all text-center relative flex flex-col items-center justify-center min-h-[90px]">
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
-                disabled={uploading}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed z-20"
-              />
-              
-              <div className="space-y-1 z-10 pointer-events-none">
-                <span className="text-xs font-bold text-neon-cyan block font-hud">
-                  {uploading 
-                    ? uploadProgress 
-                    : imageUrl 
-                    ? '📁 Visual Scan Linked [Click to Re-upload]' 
-                    : '📷 Upload Physical Scan (Drag & Drop or Click)'}
-                </span>
-                <span className="text-[9px] text-hud-text-muted block uppercase tracking-wider">
-                  Supports PNG, JPG, WEBP • Auto client-compressed to &lt; 100KB
-                </span>
+            {/* Active Camera Viewport */}
+            {isCameraActive ? (
+              <div className="relative w-full aspect-[4/3] bg-black border border-hud-border rounded overflow-hidden flex flex-col items-center justify-center">
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  className={`w-full h-full object-cover ${facingMode === 'user' ? 'scale-x-[-1]' : ''}`}
+                />
+                
+                {/* Cybernetic HUD Overlay */}
+                <div className="absolute inset-0 pointer-events-none border-2 border-neon-cyan/30 m-3 flex flex-col justify-between p-2">
+                  {/* Corner brackets */}
+                  <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-neon-cyan" />
+                  <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-neon-cyan" />
+                  <div className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-neon-cyan" />
+                  <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-neon-cyan" />
+                  
+                  {/* Scanning lines / grid */}
+                  <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(0,240,255,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[size:100%_4px,3px_100%] pointer-events-none animate-scanline" />
+                  
+                  {/* Scanner status */}
+                  <div className="flex justify-between items-start w-full">
+                    <span className="text-[9px] bg-neon-cyan/20 text-neon-cyan px-1.5 py-0.5 font-mono tracking-widest uppercase animate-pulse">
+                      ● SCANNER ACTIVE
+                    </span>
+                    <span className="text-[9px] text-hud-text-muted font-mono">
+                      FACING: {facingMode.toUpperCase()}
+                    </span>
+                  </div>
+                  
+                  {/* Center crosshair */}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-8 h-8 border border-dashed border-neon-cyan/40 rounded-full flex items-center justify-center">
+                      <div className="w-1.5 h-1.5 bg-neon-cyan rounded-full animate-ping" />
+                    </div>
+                  </div>
+
+                  <div className="w-full text-center">
+                    <span className="text-[8px] text-neon-cyan/70 font-mono tracking-wider uppercase">
+                      [Align physical asset in target area]
+                    </span>
+                  </div>
+                </div>
+
+                {/* Flash overlay */}
+                <div
+                  className={`absolute inset-0 bg-white transition-opacity duration-150 pointer-events-none ${
+                    flashActive ? 'opacity-100' : 'opacity-0'
+                  }`}
+                />
+
+                {/* Camera Controls */}
+                <div className="absolute bottom-4 left-0 right-0 flex justify-center items-center gap-4 px-4 pointer-events-auto">
+                  <button
+                    type="button"
+                    onClick={toggleCamera}
+                    className="p-2 rounded-full bg-hud-panel/80 border border-hud-border text-hud-text-bright hover:text-neon-cyan hover:border-neon-cyan transition-all cursor-pointer pointer-events-auto"
+                    title="Switch Camera"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                  </button>
+                  
+                  <button
+                    type="button"
+                    onClick={handleCapture}
+                    disabled={uploading}
+                    className="w-12 h-12 rounded-full bg-neon-cyan border-4 border-neon-cyan-dim flex items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer shadow-lg shadow-neon-cyan/20 pointer-events-auto"
+                    title="Capture Scan"
+                  >
+                    <div className="w-4 h-4 bg-hud-bg rounded-full" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={stopCamera}
+                    className="p-2 rounded-full bg-hud-panel/80 border border-hud-border text-neon-red hover:bg-neon-red/20 hover:border-neon-red transition-all cursor-pointer pointer-events-auto"
+                    title="Close Camera"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
-            </div>
+            ) : (
+              <>
+                {/* Scanner trigger button if online */}
+                {isOnline ? (
+                  <button
+                    type="button"
+                    onClick={() => startCamera()}
+                    className="w-full mb-2 py-2 rounded bg-neon-cyan-dim/10 border border-neon-cyan/30 text-neon-cyan text-xs font-bold uppercase tracking-wider hover:bg-neon-cyan-dim/20 hover:border-neon-cyan transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                  >
+                    <Camera className="w-3.5 h-3.5" />
+                    Initiate Live Scanner
+                  </button>
+                ) : (
+                  <div className="w-full mb-2 py-2 rounded bg-neon-yellow-dim/10 border border-neon-yellow/30 text-neon-yellow text-[10px] font-mono uppercase tracking-wider text-center">
+                    [SYSTEM ALERT: Scanner offline. Reconnect to sync physical assets]
+                  </div>
+                )}
+
+                {/* File upload container */}
+                <div className="border border-dashed border-hud-border hover:border-neon-cyan/50 rounded p-4 bg-hud-bg/20 transition-all text-center relative flex flex-col items-center justify-center min-h-[90px]">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    disabled={uploading}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed z-20"
+                  />
+                  
+                  <div className="space-y-1 z-10 pointer-events-none">
+                    <span className="text-xs font-bold text-neon-cyan block font-hud">
+                      {uploading 
+                        ? uploadProgress 
+                        : imageUrl 
+                        ? '📁 Visual Scan Linked [Click to Re-upload]' 
+                        : '📷 Upload Physical Scan (Drag & Drop or Click)'}
+                    </span>
+                    <span className="text-[9px] text-hud-text-muted block uppercase tracking-wider">
+                      Supports PNG, JPG, WEBP • Auto client-compressed to &lt; 100KB
+                    </span>
+                  </div>
+                </div>
+              </>
+            )}
 
             {/* Manual URL fallback */}
             <div className="space-y-1 mt-2">
@@ -551,26 +808,28 @@ export const ItemModal: React.FC<ItemModalProps> = ({ isOpen, onClose, onSave, i
           )}
 
           {/* Aesthetic Grid: Color Selector */}
-          <div className="space-y-1">
-            <label className="block text-[11px] uppercase tracking-wider text-hud-text-muted">
-              Dominant Color Accent (For OOTD Matching)
-            </label>
-            <div className="flex items-center gap-3">
-              <input
-                type="color"
-                value={dominantColor}
-                onChange={(e) => setDominantColor(e.target.value)}
-                className="w-10 h-10 bg-hud-bg border border-hud-border rounded p-1 cursor-pointer"
-              />
-              <input
-                type="text"
-                value={dominantColor}
-                onChange={(e) => setDominantColor(e.target.value)}
-                placeholder="#00f0ff"
-                className="bg-hud-bg border border-hud-border rounded px-3 py-2 text-sm text-hud-text-bright focus:outline-none focus:border-neon-cyan transition-colors font-mono w-32"
-              />
+          {category === 'Wardrobe' && (
+            <div className="space-y-1">
+              <label className="block text-[11px] uppercase tracking-wider text-hud-text-muted">
+                Dominant Color Accent (For OOTD Matching)
+              </label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="color"
+                  value={dominantColor}
+                  onChange={(e) => setDominantColor(e.target.value)}
+                  className="w-10 h-10 bg-hud-bg border border-hud-border rounded p-1 cursor-pointer"
+                />
+                <input
+                  type="text"
+                  value={dominantColor}
+                  onChange={(e) => setDominantColor(e.target.value)}
+                  placeholder="#00f0ff"
+                  className="bg-hud-bg border border-hud-border rounded px-3 py-2 text-sm text-hud-text-bright focus:outline-none focus:border-neon-cyan transition-colors font-mono w-32"
+                />
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Tagging HUD Section */}
           <div className="space-y-2 border-t border-hud-border pt-3">

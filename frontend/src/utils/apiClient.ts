@@ -16,82 +16,96 @@ async function getHeaders(): Promise<HeadersInit> {
   return headers
 }
 
-export const apiClient = {
-  async get<T>(path: string): Promise<T> {
-    const headers = await getHeaders()
-    const response = await fetch(`${API_BASE_URL}${path}`, {
-      method: 'GET',
-      headers,
-    })
+async function handleRequest<T>(requestFn: () => Promise<Response>): Promise<T> {
+  try {
+    const response = await requestFn()
     
     if (!response.ok) {
       const errorText = await response.text()
-      throw new Error(`API GET Error (${response.status}): ${errorText || response.statusText}`)
+      let parsedMessage = ''
+      try {
+        const jsonErr = JSON.parse(errorText)
+        parsedMessage = jsonErr.detail || jsonErr.message || ''
+      } catch {
+        parsedMessage = errorText
+      }
+
+      if (response.status === 401) {
+        throw new Error(parsedMessage || 'Session has expired. Please log in again.')
+      }
+      if (response.status === 503) {
+        throw new Error('Service Unavailable: The pocket dimension server is offline for maintenance.')
+      }
+      
+      throw new Error(parsedMessage || `Request failed with status ${response.status}`)
     }
-    
-    return response.json()
+
+    if (response.status === 204) {
+      return {} as T
+    }
+
+    return await response.json()
+  } catch (error: any) {
+    // Check if it's a network/CORS failure (fetch throws TypeError on connection loss)
+    if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+      throw new Error('Network Connection Failure: Cannot establish link with the pocket dimension server. Please verify your internet connection or check if the backend is running.')
+    }
+    throw error
+  }
+}
+
+export const apiClient = {
+  async get<T>(path: string): Promise<T> {
+    return handleRequest<T>(async () => {
+      const headers = await getHeaders()
+      return fetch(`${API_BASE_URL}${path}`, {
+        method: 'GET',
+        headers,
+      })
+    })
   },
 
   async post<T>(path: string, body: any): Promise<T> {
-    const headers = await getHeaders()
-    const response = await fetch(`${API_BASE_URL}${path}`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(body),
+    return handleRequest<T>(async () => {
+      const headers = await getHeaders()
+      return fetch(`${API_BASE_URL}${path}`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(body),
+      })
     })
-
-    if (!response.ok) {
-      const errorText = await response.text()
-      throw new Error(`API POST Error (${response.status}): ${errorText || response.statusText}`)
-    }
-
-    return response.json()
   },
 
   async put<T>(path: string, body: any): Promise<T> {
-    const headers = await getHeaders()
-    const response = await fetch(`${API_BASE_URL}${path}`, {
-      method: 'PUT',
-      headers,
-      body: JSON.stringify(body),
+    return handleRequest<T>(async () => {
+      const headers = await getHeaders()
+      return fetch(`${API_BASE_URL}${path}`, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify(body),
+      })
     })
-
-    if (!response.ok) {
-      const errorText = await response.text()
-      throw new Error(`API PUT Error (${response.status}): ${errorText || response.statusText}`)
-    }
-
-    return response.json()
   },
 
   async patch<T>(path: string, body: any): Promise<T> {
-    const headers = await getHeaders()
-    const response = await fetch(`${API_BASE_URL}${path}`, {
-      method: 'PATCH',
-      headers,
-      body: JSON.stringify(body),
+    return handleRequest<T>(async () => {
+      const headers = await getHeaders()
+      return fetch(`${API_BASE_URL}${path}`, {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify(body),
+      })
     })
-
-    if (!response.ok) {
-      const errorText = await response.text()
-      throw new Error(`API PATCH Error (${response.status}): ${errorText || response.statusText}`)
-    }
-
-    return response.json()
   },
 
   async delete<T>(path: string): Promise<T> {
-    const headers = await getHeaders()
-    const response = await fetch(`${API_BASE_URL}${path}`, {
-      method: 'DELETE',
-      headers,
+    return handleRequest<T>(async () => {
+      const headers = await getHeaders()
+      return fetch(`${API_BASE_URL}${path}`, {
+        method: 'DELETE',
+        headers,
+      })
     })
-
-    if (!response.ok) {
-      const errorText = await response.text()
-      throw new Error(`API DELETE Error (${response.status}): ${errorText || response.statusText}`)
-    }
-
-    return response.json()
   },
 }
+

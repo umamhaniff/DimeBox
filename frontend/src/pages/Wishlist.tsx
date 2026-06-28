@@ -15,6 +15,7 @@ interface WishlistProps {
 export const Wishlist: React.FC<WishlistProps> = ({ onInspectItem, onDelete, onBuy, refreshTrigger }) => {
   const [items, setItems] = useState<Item[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     fetchWishlist()
@@ -22,11 +23,13 @@ export const Wishlist: React.FC<WishlistProps> = ({ onInspectItem, onDelete, onB
 
   const fetchWishlist = async () => {
     setLoading(true)
+    setError(null)
     try {
       const data = await apiClient.get<Item[]>('/items?status_filter=Wishlist')
       setItems(data)
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to fetch wishlist items:', err)
+      setError(err.message || 'Failed to sync with the pocket dimension.')
     } finally {
       setLoading(false)
     }
@@ -34,6 +37,21 @@ export const Wishlist: React.FC<WishlistProps> = ({ onInspectItem, onDelete, onB
 
   return (
     <div className="p-6 space-y-6 animate-hud-fade font-hud">
+      
+      {error && (
+        <div className="hud-corner-box bg-neon-red-dim border border-neon-red p-4 rounded text-neon-red font-mono text-xs relative my-2">
+          <div className="hud-corner-bottom" />
+          <span className="font-bold block mb-1">[SYSTEM ALERT: LINK FAILURE]</span>
+          <p className="mb-3">{error}</p>
+          <button
+            type="button"
+            onClick={() => fetchWishlist()}
+            className="px-3 py-1.5 rounded bg-neon-red text-hud-bg font-bold uppercase tracking-wider text-[10px] hover:bg-hud-text-bright hover:text-neon-red transition-all cursor-pointer"
+          >
+            Retry Connection
+          </button>
+        </div>
+      )}
       
       {/* Header */}
       <div className="flex justify-between items-center border-b border-hud-border pb-3">

@@ -15,6 +15,7 @@ export const Profile: React.FC<ProfileProps> = ({ refreshTrigger, onInspectItem 
   const [items, setItems] = useState<Item[]>([])
   const [tags, setTags] = useState<Tag[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [deletingTagId, setDeletingTagId] = useState<string | null>(null)
 
   useEffect(() => {
@@ -23,6 +24,7 @@ export const Profile: React.FC<ProfileProps> = ({ refreshTrigger, onInspectItem 
 
   const fetchData = async () => {
     setLoading(true)
+    setError(null)
     try {
       const [itemsData, tagsData] = await Promise.all([
         apiClient.get<Item[]>('/items'),
@@ -30,8 +32,9 @@ export const Profile: React.FC<ProfileProps> = ({ refreshTrigger, onInspectItem 
       ])
       setItems(itemsData)
       setTags(tagsData)
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to fetch profile data:', err)
+      setError(err.message || 'Failed to sync with the pocket dimension.')
     } finally {
       setLoading(false)
     }
@@ -67,6 +70,21 @@ export const Profile: React.FC<ProfileProps> = ({ refreshTrigger, onInspectItem 
 
   return (
     <div className="p-6 space-y-6 animate-hud-fade font-hud">
+      
+      {error && (
+        <div className="hud-corner-box bg-neon-red-dim border border-neon-red p-4 rounded text-neon-red font-mono text-xs relative my-2">
+          <div className="hud-corner-bottom" />
+          <span className="font-bold block mb-1">[SYSTEM ALERT: LINK FAILURE]</span>
+          <p className="mb-3">{error}</p>
+          <button
+            type="button"
+            onClick={() => fetchData()}
+            className="px-3 py-1.5 rounded bg-neon-red text-hud-bg font-bold uppercase tracking-wider text-[10px] hover:bg-hud-text-bright hover:text-neon-red transition-all cursor-pointer"
+          >
+            Retry Connection
+          </button>
+        </div>
+      )}
       
       {/* 1. Explorer Header */}
       <div className="hud-corner-box bg-hud-panel border-hud-border p-5 rounded relative flex flex-col gap-3">

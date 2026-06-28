@@ -16,6 +16,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddItem, onInspectItem }
   const [items, setItems] = useState<Item[]>([])
   const [trips, setTrips] = useState<Trip[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [isQuestModalOpen, setIsQuestModalOpen] = useState(false)
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null)
 
@@ -24,6 +25,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddItem, onInspectItem }
   }, [])
 
   const fetchDashboardData = async () => {
+    setLoading(true)
+    setError(null)
     try {
       const [itemsData, tripsData] = await Promise.all([
         apiClient.get<Item[]>('/items'),
@@ -31,8 +34,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddItem, onInspectItem }
       ])
       setItems(itemsData)
       setTrips(tripsData)
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to fetch dashboard data:', err)
+      setError(err.message || 'Failed to sync with the pocket dimension.')
     } finally {
       setLoading(false)
     }
@@ -62,6 +66,21 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddItem, onInspectItem }
   return (
     <div className="p-6 space-y-6 animate-hud-fade font-hud">
       
+      {error && (
+        <div className="hud-corner-box bg-neon-red-dim border border-neon-red p-4 rounded text-neon-red font-mono text-xs relative my-2">
+          <div className="hud-corner-bottom" />
+          <span className="font-bold block mb-1">[SYSTEM ALERT: LINK FAILURE]</span>
+          <p className="mb-3">{error}</p>
+          <button
+            type="button"
+            onClick={() => fetchDashboardData()}
+            className="px-3 py-1.5 rounded bg-neon-red text-hud-bg font-bold uppercase tracking-wider text-[10px] hover:bg-hud-text-bright hover:text-neon-red transition-all cursor-pointer"
+          >
+            Retry Connection
+          </button>
+        </div>
+      )}
+
       {/* Responsive layout wrapper */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
         

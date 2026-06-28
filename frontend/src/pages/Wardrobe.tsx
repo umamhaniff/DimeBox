@@ -30,6 +30,7 @@ export const Wardrobe: React.FC<WardrobeProps> = ({ onInspectItem, onDelete, onB
   const [savedOutfits, setSavedOutfits] = useState<SavedOutfit[]>([])
   const [loading, setLoading] = useState(true)
   const [outfitsLoading, setOutfitsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   // 3. Vault Filter States
   const [search, setSearch] = useState('')
@@ -61,6 +62,7 @@ export const Wardrobe: React.FC<WardrobeProps> = ({ onInspectItem, onDelete, onB
 
   const fetchData = async () => {
     setLoading(true)
+    setError(null)
     try {
       const [itemsData, tagsData] = await Promise.all([
         apiClient.get<Item[]>('/items?category=Wardrobe'),
@@ -68,8 +70,9 @@ export const Wardrobe: React.FC<WardrobeProps> = ({ onInspectItem, onDelete, onB
       ])
       setItems(itemsData)
       setTags(tagsData)
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to fetch wardrobe data:', err)
+      setError(err.message || 'Failed to sync with the pocket dimension.')
     } finally {
       setLoading(false)
     }
@@ -77,11 +80,13 @@ export const Wardrobe: React.FC<WardrobeProps> = ({ onInspectItem, onDelete, onB
 
   const fetchOutfits = async () => {
     setOutfitsLoading(true)
+    setError(null)
     try {
       const outfitsData = await apiClient.get<SavedOutfit[]>('/outfits')
       setSavedOutfits(outfitsData)
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to fetch saved outfits:', err)
+      setError(err.message || 'Failed to sync with the pocket dimension.')
     } finally {
       setOutfitsLoading(false)
     }
@@ -182,6 +187,26 @@ export const Wardrobe: React.FC<WardrobeProps> = ({ onInspectItem, onDelete, onB
 
   return (
     <div className="p-6 space-y-6 animate-hud-fade font-hud">
+      
+      {error && (
+        <div className="hud-corner-box bg-neon-red-dim border border-neon-red p-4 rounded text-neon-red font-mono text-xs relative my-2">
+          <div className="hud-corner-bottom" />
+          <span className="font-bold block mb-1">[SYSTEM ALERT: LINK FAILURE]</span>
+          <p className="mb-3">{error}</p>
+          <button
+            type="button"
+            onClick={() => {
+              fetchData()
+              if (activeTab === 'ootd') {
+                fetchOutfits()
+              }
+            }}
+            className="px-3 py-1.5 rounded bg-neon-red text-hud-bg font-bold uppercase tracking-wider text-[10px] hover:bg-hud-text-bright hover:text-neon-red transition-all cursor-pointer"
+          >
+            Retry Connection
+          </button>
+        </div>
+      )}
       
       {/* 1. Header with Stats & Sub-Navigation */}
       <div className="flex flex-col md:flex-row md:justify-between md:items-center border-b border-hud-border pb-4 gap-4">
