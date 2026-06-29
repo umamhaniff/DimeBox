@@ -246,5 +246,14 @@ CREATE TABLE outfit_items (
     *   **Gamified Stat Mapping:** Mapping real inventory metrics (like average durability to Vitality, and wishlist counts to Sense) creates a highly engaging, meaningful gamification loop rather than just static numbers.
     *   **Strict Local Compiler Checks:** Resolving unused imports (`Award` and `ShieldAlert`) immediately after builds ensures production deployment pipelines do not break on Vercel.
 
+### Session 9: Vercel Serverless & Config Optimization (2026-06-29)
+*   **Status:** Vercel Deployment Configuration Fixed & Verified.
+*   **Key Deliverables:**
+    1.  **Entrypoint Realignment:** Fixed `ModuleNotFoundError: No module named 'app'` by creating a root [main.py](file:///D:/_CampusLife/ProjectCampus/6ProjectPribadi/DimeBox/backend/main.py) entrypoint that imports `app` from `app.main`, and updated [vercel.json](file:///D:/_CampusLife/ProjectCampus/6ProjectPribadi/DimeBox/backend/vercel.json) to target it. This keeps Python's `sys.path` aligned to the `backend/` root directory during Vercel Serverless execution.
+    2.  **Pydantic Build-time Validation Bypass:** Avoided Pydantic `ValidationError` crashes during Vercel's import-checking build phase by adding default empty strings `""` to `database_url` and `supabase_jwt_secret` inside [config.py](file:///D:/_CampusLife/ProjectCampus/6ProjectPribadi/DimeBox/backend/app/config.py).
+*   **Key Learnings & Decisions:**
+    *   **Vercel Build Imports:** Vercel imports python files during the build phase to locate the ASGI handler. Hard-required environment variables in Pydantic `BaseSettings` will crash the build if not provided with fallback defaults, even though they are successfully injected at runtime.
+
+
 
 
