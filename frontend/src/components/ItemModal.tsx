@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import type { Item, Tag } from '../utils/durability'
 import { apiClient } from '../utils/apiClient'
 
-import { X, Plus, Tag as TagIcon, Sparkles, Camera, RefreshCw } from 'lucide-react'
+import { X, Plus, Tag as TagIcon, Sparkles, Camera, RefreshCw, Upload } from 'lucide-react'
 
 // Client-side image compression using HTML5 Canvas (zero-dependency)
 const compressImage = (file: File): Promise<Blob> => {
@@ -139,6 +139,7 @@ export const ItemModal: React.FC<ItemModalProps> = ({ isOpen, onClose, onSave, i
   // Camera states
   const videoRef = useRef<HTMLVideoElement>(null)
   const cameraInputRef = useRef<HTMLInputElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [isCameraActive, setIsCameraActive] = useState(false)
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null)
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('environment')
@@ -677,27 +678,71 @@ export const ItemModal: React.FC<ItemModalProps> = ({ isOpen, onClose, onSave, i
                 />
 
                 {/* File upload container */}
-                <div className="border border-dashed border-hud-border hover:border-neon-cyan/50 rounded p-4 bg-hud-bg/20 transition-all text-center relative flex flex-col items-center justify-center min-h-[90px]">
+                <div className="border border-dashed border-hud-border rounded p-4 bg-hud-bg/20 transition-all text-center relative flex flex-col items-center justify-center min-h-[100px]">
+                  {uploading ? (
+                    <span className="text-xs font-bold text-neon-cyan block font-hud animate-pulse">
+                      {uploadProgress}
+                    </span>
+                  ) : imageUrl ? (
+                    <div className="space-y-2 z-10 w-full">
+                      <span className="text-xs font-bold text-neon-green block font-hud">
+                        📁 Visual Scan Linked
+                      </span>
+                      <div className="flex gap-2 justify-center">
+                        <button
+                          type="button"
+                          onClick={() => cameraInputRef.current?.click()}
+                          className="px-3 py-1.5 rounded bg-hud-bg border border-hud-border text-neon-cyan text-[10px] font-bold uppercase tracking-wider hover:border-neon-cyan transition-colors cursor-pointer"
+                        >
+                          Retake Photo
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="px-3 py-1.5 rounded bg-hud-bg border border-hud-border text-hud-text-bright text-[10px] font-bold uppercase tracking-wider hover:border-neon-cyan transition-colors cursor-pointer"
+                        >
+                          Choose File
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-3 z-10 w-full">
+                      <span className="text-xs font-bold text-hud-text-bright block font-hud">
+                        📷 Link Physical Scan
+                      </span>
+                      <div className="flex gap-3 justify-center">
+                        <button
+                          type="button"
+                          onClick={() => cameraInputRef.current?.click()}
+                          className="flex-1 py-2 px-3 rounded bg-neon-cyan-dim/10 border border-neon-cyan/30 text-neon-cyan text-[10px] font-bold uppercase tracking-wider hover:bg-neon-cyan-dim/20 hover:border-neon-cyan transition-all cursor-pointer flex items-center justify-center gap-1"
+                        >
+                          <Camera className="w-3.5 h-3.5" />
+                          Take Photo
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="flex-1 py-2 px-3 rounded bg-hud-bg border border-hud-border text-hud-text-bright text-[10px] font-bold uppercase tracking-wider hover:border-neon-cyan transition-all cursor-pointer flex items-center justify-center gap-1"
+                        >
+                          <Upload className="w-3.5 h-3.5" />
+                          Choose File
+                        </button>
+                      </div>
+                      <span className="text-[8px] text-hud-text-muted block uppercase tracking-wider">
+                        Auto client-compressed to &lt; 100KB
+                      </span>
+                    </div>
+                  )}
+                  
+                  {/* Hidden standard file input */}
                   <input
                     type="file"
                     accept="image/*"
+                    ref={fileInputRef}
                     onChange={handleFileChange}
                     disabled={uploading}
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed z-20"
+                    className="hidden"
                   />
-                  
-                  <div className="space-y-1 z-10 pointer-events-none">
-                    <span className="text-xs font-bold text-neon-cyan block font-hud">
-                      {uploading 
-                        ? uploadProgress 
-                        : imageUrl 
-                        ? '📁 Visual Scan Linked [Click to Re-upload]' 
-                        : '📷 Upload Physical Scan (Drag & Drop or Click)'}
-                    </span>
-                    <span className="text-[9px] text-hud-text-muted block uppercase tracking-wider">
-                      Supports PNG, JPG, WEBP • Auto client-compressed to &lt; 100KB
-                    </span>
-                  </div>
                 </div>
               </>
             )}
