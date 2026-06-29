@@ -37,7 +37,7 @@ async def postgres_exception_handler(request: Request, exc: asyncpg.PostgresErro
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={
-            "detail": "Database transaction failed. The pocket dimension vault is temporarily unstable. Please try again."
+            "detail": f"Database transaction failed: {str(exc)}"
         }
     )
 
