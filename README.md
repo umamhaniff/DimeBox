@@ -235,14 +235,15 @@ DimeBox is equipped with a custom-built service worker located at [frontend/publ
 
 ## 📦 Deployment
 
-### Frontend (Vercel)
-The frontend contains a `vercel.json` configured for SPA routing. You can connect your GitHub repository to Vercel and deploy the `frontend` subdirectory.
+Seluruh monorepo **DimeBox** (Frontend & Backend) dideploy bersama-sama di **satu project Vercel** secara otomatis menggunakan file [vercel.json](file:///D:/_CampusLife/ProjectCampus/6ProjectPribadi/DimeBox/vercel.json) di root:
 
-### Backend (Vercel / Railway)
-The backend contains a `vercel.json` for serverless Python execution, as well as a `Procfile` for containerized hosting on Railway or Heroku.
-For Vercel deployment:
-1.  Set the root directory to `backend`.
-2.  Add `DATABASE_URL` and `SUPABASE_JWT_SECRET` as environment variables.
+1.  Hubungkan repositori GitHub kamu ke Vercel.
+2.  Atur **Root Directory** ke `/` (default).
+3.  Pilih **Framework Preset**: `Other`.
+4.  Masukkan seluruh Environment Variables (`DATABASE_URL`, `SUPABASE_JWT_SECRET`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`).
+5.  Klik **Deploy**. Frontend akan ter-hosting secara statis, dan backend API otomatis aktif di bawah path `/api/*`.
+
+Untuk panduan lengkap, lihat [DEPLOYMENT.md](file:///D:/_CampusLife/ProjectCampus/6ProjectPribadi/DimeBox/DEPLOYMENT.md).
 
 ---
 
