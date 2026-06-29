@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react'
 import { AuthProvider, useAuth } from './context/AuthContext'
-import { Auth } from './pages/Auth'
 import { Navbar } from './components/Navbar'
-import { Dashboard } from './pages/Dashboard'
-import { Wardrobe } from './pages/Wardrobe'
-import { Gear } from './pages/Gear'
-import { Wishlist } from './pages/Wishlist'
-import { Profile } from './pages/Profile'
+
+const Auth = React.lazy(() => import('./pages/Auth').then((m) => ({ default: m.Auth })))
+const Dashboard = React.lazy(() => import('./pages/Dashboard').then((m) => ({ default: m.Dashboard })))
+const Wardrobe = React.lazy(() => import('./pages/Wardrobe').then((m) => ({ default: m.Wardrobe })))
+const Gear = React.lazy(() => import('./pages/Gear').then((m) => ({ default: m.Gear })))
+const Wishlist = React.lazy(() => import('./pages/Wishlist').then((m) => ({ default: m.Wishlist })))
+const Profile = React.lazy(() => import('./pages/Profile').then((m) => ({ default: m.Profile })))
 import { ItemModal } from './components/ItemModal'
 import type { Item } from './utils/durability'
 import { apiClient } from './utils/apiClient'
@@ -245,7 +246,18 @@ const MainApp: React.FC = () => {
         {/* Main Application Container */}
         <main className="w-full flex-1 pb-24 md:pb-0 bg-transparent md:bg-hud-panel md:border md:border-hud-border md:rounded-2xl md:shadow-2xl md:p-6 md:min-h-[750px] relative md:hud-corner-box">
           <div className="hidden md:block hud-corner-bottom" />
-          {renderContent()}
+          <React.Suspense
+            fallback={
+              <div className="flex flex-col items-center justify-center min-h-[400px] font-hud">
+                <Loader2 className="w-8 h-8 text-neon-cyan animate-spin mb-3" />
+                <span className="text-[10px] uppercase tracking-widest text-hud-text-muted animate-pulse">
+                  Loading Module...
+                </span>
+              </div>
+            }
+          >
+            {renderContent()}
+          </React.Suspense>
         </main>
       </div>
 
@@ -279,7 +291,20 @@ const AppContent: React.FC = () => {
     )
   }
 
-  return user ? <MainApp /> : <Auth />
+  return (
+    <React.Suspense
+      fallback={
+        <div className="min-h-screen bg-hud-bg flex flex-col items-center justify-center font-hud">
+          <Loader2 className="w-10 h-10 text-neon-cyan animate-spin mb-4" />
+          <span className="text-xs uppercase tracking-widest text-hud-text-muted animate-pulse">
+            Loading System Modules...
+          </span>
+        </div>
+      }
+    >
+      {user ? <MainApp /> : <Auth />}
+    </React.Suspense>
+  )
 }
 
 function App() {

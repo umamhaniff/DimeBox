@@ -8,5 +8,26 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  build: {
+    chunkSizeWarningLimit: 800,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('@supabase')) {
+              return 'supabase'
+            }
+            if (id.includes('lucide-react')) {
+              return 'lucide'
+            }
+            if (id.includes('react') || id.includes('react-dom') || id.includes('scheduler')) {
+              return 'react-core'
+            }
+          }
+        }
+      }
+    }
+  }
 })
+
 

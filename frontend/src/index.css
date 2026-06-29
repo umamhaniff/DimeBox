@@ -1,44 +1,57 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --color-hud-bg: hsl(222 47% 4%);
-  --color-hud-panel: hsl(222 35% 8%);
-  --color-hud-panel-light: hsl(222 25% 14%);
-  --color-hud-border: hsl(217 30% 18%);
+  --color-hud-bg: hsl(225 50% 3%);
+  --color-hud-panel: hsl(224 40% 6% / 0.7);
+  --color-hud-panel-light: hsl(224 30% 12% / 0.85);
+  --color-hud-border: hsl(218 35% 15%);
   --color-hud-border-active: hsl(185 100% 50%);
-  --color-hud-text: hsl(215 20% 75%);
-  --color-hud-text-bright: hsl(210 40% 98%);
-  --color-hud-text-muted: hsl(215 15% 50%);
+  --color-hud-text: hsl(215 25% 78%);
+  --color-hud-text-bright: hsl(210 50% 98%);
+  --color-hud-text-muted: hsl(215 20% 52%);
   
   --color-neon-cyan: hsl(185 100% 50%);
   --color-neon-cyan-dim: hsl(185 100% 50% / 0.15);
-  --color-neon-purple: hsl(285 100% 50%);
-  --color-neon-purple-dim: hsl(285 100% 50% / 0.15);
-  --color-neon-green: hsl(110 100% 50%);
-  --color-neon-green-dim: hsl(110 100% 50% / 0.15);
-  --color-neon-yellow: hsl(50 100% 50%);
-  --color-neon-yellow-dim: hsl(50 100% 50% / 0.15);
-  --color-neon-red: hsl(347 100% 50%);
-  --color-neon-red-dim: hsl(347 100% 50% / 0.15);
+  --color-neon-purple: hsl(271 91% 65%);
+  --color-neon-purple-dim: hsl(271 91% 65% / 0.18);
+  --color-neon-green: hsl(142 76% 45%);
+  --color-neon-green-dim: hsl(142 76% 45% / 0.15);
+  --color-neon-yellow: hsl(45 93% 47%);
+  --color-neon-yellow-dim: hsl(45 93% 47% / 0.15);
+  --color-neon-red: hsl(350 89% 60%);
+  --color-neon-red-dim: hsl(350 89% 60% / 0.15);
+  --color-neon-orange: hsl(24 95% 53%);
+  --color-neon-orange-dim: hsl(24 95% 53% / 0.15);
   
-  --font-hud: "Space Grotesk", "Outfit", system-ui, -apple-system, sans-serif;
-  --font-sans: "Outfit", system-ui, -apple-system, sans-serif;
+  --font-hud: "Space Grotesk", "Orbitron", system-ui, sans-serif;
+  --font-sans: "Outfit", system-ui, sans-serif;
+  --font-mono: "Space Grotesk", monospace;
   
   --animate-neon-pulse: neon-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-  --animate-scanline: scanline 6s linear infinite;
-  --animate-glitch: glitch 1s steps(2, start) infinite;
-  --animate-hud-fade: hud-fade 0.3s ease-out forwards;
+  --animate-shadow-pulse: shadow-pulse 3s ease-in-out infinite;
+  --animate-scanline: scanline 8s linear infinite;
+  --animate-glitch: glitch 1.5s steps(2, start) infinite;
+  --animate-hud-fade: hud-fade 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 @keyframes neon-pulse {
   0%, 100% {
     opacity: 1;
-    box-shadow: 0 0 8px hsl(185 100% 50% / 0.4), inset 0 0 4px hsl(185 100% 50% / 0.2);
+    box-shadow: 0 0 8px hsl(185 100% 50% / 0.3), inset 0 0 4px hsl(185 100% 50% / 0.1);
   }
   50% {
-    opacity: 0.8;
-    box-shadow: 0 0 16px hsl(185 100% 50% / 0.6), inset 0 0 8px hsl(185 100% 50% / 0.3);
+    opacity: 0.85;
+    box-shadow: 0 0 16px hsl(185 100% 50% / 0.5), inset 0 0 8px hsl(185 100% 50% / 0.2);
+  }
+}
+
+@keyframes shadow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 15px hsl(271 91% 65% / 0.1), inset 0 0 5px hsl(271 91% 65% / 0.05);
+  }
+  50% {
+    box-shadow: 0 0 25px hsl(271 91% 65% / 0.25), inset 0 0 10px hsl(271 91% 65% / 0.12);
   }
 }
 
@@ -54,7 +67,7 @@
 @keyframes hud-fade {
   from {
     opacity: 0;
-    transform: scale(0.98) translateY(4px);
+    transform: scale(0.99) translateY(6px);
   }
   to {
     opacity: 1;
@@ -62,7 +75,7 @@
   }
 }
 
-/* Custom Base Styles for RPG HUD */
+/* Custom Base Styles for Solo Leveling HUD */
 body {
   background-color: var(--color-hud-bg);
   color: var(--color-hud-text);
@@ -70,6 +83,10 @@ body {
   overflow-x: hidden;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
+  background-image: 
+    radial-gradient(at 0% 0%, hsl(271 91% 65% / 0.04) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, hsl(185 100% 50% / 0.04) 0px, transparent 50%);
+  background-attachment: fixed;
 }
 
 /* Scrollbar styling */
@@ -93,11 +110,11 @@ body {
 
 /* Glow Utility Classes */
 .glow-cyan {
-  box-shadow: 0 0 10px hsl(185 100% 50% / 0.3);
+  box-shadow: 0 0 12px hsl(185 100% 50% / 0.25);
 }
 
 .glow-purple {
-  box-shadow: 0 0 10px hsl(285 100% 50% / 0.3);
+  box-shadow: 0 0 12px hsl(271 91% 65% / 0.25);
 }
 
 .glow-text-cyan {
@@ -105,7 +122,33 @@ body {
 }
 
 .glow-text-purple {
-  text-shadow: 0 0 8px hsl(285 100% 50% / 0.5);
+  text-shadow: 0 0 8px hsl(271 91% 65% / 0.5);
+}
+
+.glow-text-yellow {
+  text-shadow: 0 0 8px hsl(45 93% 47% / 0.5);
+}
+
+/* System Window Backdrops (Glassmorphic) */
+.system-window {
+  background: linear-gradient(135deg, hsl(224 40% 6% / 0.75) 0%, hsl(224 45% 4% / 0.85) 100%);
+  backdrop-filter: blur(12px);
+  border: 1px solid hsl(218 35% 15% / 0.8);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+}
+
+.system-window-header {
+  border-bottom: 1px solid hsl(218 35% 15% / 0.8);
+  background: linear-gradient(90deg, hsl(224 40% 8% / 0.5) 0%, transparent 100%);
+}
+
+/* Slanted HUD elements */
+.slanted-tab {
+  transform: skewX(-12deg);
+}
+
+.slanted-tab-inner {
+  transform: skewX(12deg);
 }
 
 /* Scanline Overlay for the CRT/HUD effect */
@@ -122,9 +165,9 @@ body {
   left: 0;
   bottom: 0;
   right: 0;
-  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.15) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
   z-index: 99;
-  background-size: 100% 2px, 3px 100%;
+  background-size: 100% 3px, 3px 100%;
   pointer-events: none;
 }
 
@@ -145,6 +188,7 @@ body {
   border-color: var(--color-neon-cyan);
   border-style: solid;
   pointer-events: none;
+  transition: border-color 0.3s ease;
 }
 
 /* Top Left */
@@ -180,4 +224,44 @@ body {
   bottom: -1px;
   right: -1px;
   border-width: 0 2px 2px 0;
+}
+
+/* Rarity classes with specific glows */
+.rarity-s {
+  border-color: var(--color-neon-yellow);
+  box-shadow: 0 0 15px hsl(45 93% 47% / 0.25), inset 0 0 8px hsl(45 93% 47% / 0.08);
+}
+.rarity-s::before, .rarity-s::after, .rarity-s > .hud-corner-bottom::before, .rarity-s > .hud-corner-bottom::after {
+  border-color: var(--color-neon-yellow) !important;
+}
+
+.rarity-a {
+  border-color: var(--color-neon-purple);
+  box-shadow: 0 0 12px hsl(271 91% 65% / 0.22), inset 0 0 6px hsl(271 91% 65% / 0.06);
+}
+.rarity-a::before, .rarity-a::after, .rarity-a > .hud-corner-bottom::before, .rarity-a > .hud-corner-bottom::after {
+  border-color: var(--color-neon-purple) !important;
+}
+
+.rarity-b {
+  border-color: var(--color-neon-cyan);
+  box-shadow: 0 0 10px hsl(185 100% 50% / 0.18), inset 0 0 4px hsl(185 100% 50% / 0.04);
+}
+.rarity-b::before, .rarity-b::after, .rarity-b > .hud-corner-bottom::before, .rarity-b > .hud-corner-bottom::after {
+  border-color: var(--color-neon-cyan) !important;
+}
+
+.rarity-c {
+  border-color: var(--color-neon-green);
+  box-shadow: 0 0 8px hsl(142 76% 45% / 0.12);
+}
+.rarity-c::before, .rarity-c::after, .rarity-c > .hud-corner-bottom::before, .rarity-c > .hud-corner-bottom::after {
+  border-color: var(--color-neon-green) !important;
+}
+
+.rarity-d {
+  border-color: var(--color-hud-border);
+}
+.rarity-d::before, .rarity-d::after, .rarity-d > .hud-corner-bottom::before, .rarity-d > .hud-corner-bottom::after {
+  border-color: var(--color-hud-border) !important;
 }

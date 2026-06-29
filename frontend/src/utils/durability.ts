@@ -44,6 +44,9 @@ export function calculateDurability(item: Item): DurabilityInfo {
 
   if (item.category === 'Toiletries' && item.expiry_reminder_months && item.purchase_date) {
     const purchaseDate = new Date(item.purchase_date)
+    if (isNaN(purchaseDate.getTime())) {
+      return { percentage: 100, status: 'optimal', label: '100% Durability (New)' }
+    }
     const now = new Date()
     
     const diffTime = Math.abs(now.getTime() - purchaseDate.getTime())
@@ -72,6 +75,9 @@ export function calculateDurability(item: Item): DurabilityInfo {
   // Each year of ownership reduces durability by 10% for Gear, 15% for Wardrobe.
   if (item.purchase_date) {
     const purchaseDate = new Date(item.purchase_date)
+    if (isNaN(purchaseDate.getTime())) {
+      return { percentage: 100, status: 'optimal', label: '100% Durability (New)' }
+    }
     const now = new Date()
     const diffTime = now.getTime() - purchaseDate.getTime()
     const diffYears = diffTime / (1000 * 60 * 60 * 24 * 365.25)

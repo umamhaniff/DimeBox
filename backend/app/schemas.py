@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional, List
 from datetime import date, datetime
 from uuid import UUID
@@ -32,8 +32,7 @@ class TagResponse(TagBase):
     user_id: UUID
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # 3. WISHLIST LINK SCHEMAS
 class WishlistLinkBase(BaseModel):
@@ -50,8 +49,7 @@ class WishlistLinkResponse(WishlistLinkBase):
     is_cheapest: bool
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # 4. ITEM SCHEMAS
 class ItemBase(BaseModel):
@@ -91,8 +89,7 @@ class ItemResponse(ItemBase):
     tags: List[TagResponse] = []
     wishlist_links: List[WishlistLinkResponse] = []
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 
@@ -109,8 +106,7 @@ class OutfitResponse(OutfitBase):
     created_at: datetime
     items: List[ItemResponse] = []
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # 5. TRIP/QUEST SCHEMAS
@@ -130,8 +126,7 @@ class TripResponse(TripBase):
     created_at: datetime
     trip_items: List[TripItemResponse] = []
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class TripItemUpdate(BaseModel):
     is_packed: bool

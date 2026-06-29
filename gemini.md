@@ -221,3 +221,30 @@ CREATE TABLE outfit_items (
 *   **Key Learnings & Decisions:**
     *   **Decoupled Verification:** Independent frontend compilation and backend module import checks are highly effective in validating microservices-based architectures prior to deployment.
     *   **Self-Documentation:** Aligning the README's feature checklist with the PRD helps keep the product specifications and documentation synchronized.
+
+### Session 7: Bundler Optimization & Code Splitting (2026-06-29)
+*   **Status:** Chunk Size Warning Resolved & Build Optimized.
+*   **Key Deliverables:**
+    1.  **Vite / Rolldown Chunking Config:** Updated `vite.config.ts` to implement `manualChunks` splitting for `@supabase/supabase-js`, `lucide-react`, and `react-core` (React, React-DOM, Scheduler), keeping all generated chunks well below the 500 kB warning limit.
+    2.  **Dynamic Page Import (Lazy Loading):** Modified `App.tsx` to dynamically load all primary pages (`Auth`, `Dashboard`, `Wardrobe`, `Gear`, `Wishlist`, `Profile`) using `React.lazy` and wrapped them in `<React.Suspense>` blocks with themed cybernetic loading overlays ("Loading Module...", "Loading System Modules...").
+    3.  **Production Verification:** Successfully built the frontend using `npm run build` with Vite 8 / Rolldown in 540ms, achieving 100% type-safe compilation and zero warnings.
+    4.  **Cybernetic Camera Fallback:** Implemented a multi-stage WebRTC and HTML5 camera capture fallback in `ItemModal.tsx`. If the initial request for the back/environment camera fails (which happens on most laptops/desktops because they only have a front webcam), it instantly falls back to a generic `{ video: true }` request to use whatever webcam is available. If that also fails (or if we are in an insecure context), it falls back to the native device camera application via HTML5 `capture="environment"`.
+*   **Key Learnings & Decisions:**
+    *   **Vite 8 & Rolldown Compatibility:** Rolldown successfully supports the standard Rollup function-based `manualChunks` configuration, allowing precise control over heavy node_modules libraries without needing complex plugins.
+    *   **Dynamic Suspense Fallbacks:** Using localized `<React.Suspense>` blocks inside the main layout preserves the layout frame (like the sidebar and header) while loading lazy chunks, offering a seamless UX.
+    *   **Secure Context Restrictions (WebRTC vs HTML5):** WebRTC's `getUserMedia` is strictly restricted to secure contexts (HTTPS or localhost). Adding an HTML5 `<input type="file" capture="environment">` fallback guarantees camera access on mobile devices when testing over local network IPs.
+
+### Session 8: Solo Leveling System UI/UX Overhaul (2026-06-29)
+*   **Status:** UI/UX Redesign COMPLETED.
+*   **Key Deliverables:**
+    1.  **System-Wide Theme Overhaul:** Reconfigured `index.css` with a high-contrast dark fantasy palette (`hsl(225 50% 3%)` background, glowing `neon-purple` shadow Monarch aura, and `neon-cyan` details). Added custom CRT scanline overlays and slanted panel layout classes.
+    2.  **RPG Status Dashboard:** Redesigned `Dashboard.tsx` to feature a tactical **"SYSTEM STATUS: INTERFACE ACTIVE"** board with `LV. X` display, dynamic title ratings (e.g. C-Rank, S-Rank), XP progression meters, and **"Active Quest Logs"** styled as system quest notifications.
+    3.  **Hunter Status Window:** Transformed `Profile.tsx` into a classic Solo Leveling **"Status Window"** containing custom stats (STR, AGI, VIT, INT, SEN) mapped directly to inventory statistics (asset counts, average durability, wishlist counts). Implemented an interactive client-side **Stat Points Allocation HUD** (allocated using cosmetic "+" buttons and a reset trigger).
+    4.  **Rarity-Based Inventory Slots:** Refactored `ItemCard.tsx` to apply custom border glows and shadows according to item worth rating (S-Rank Gold, A-Rank Purple, B-Rank Cyan, C-Rank Green, D-Rank Grey), replicating RPG gear slots.
+    5.  **Production Verification:** Successfully compiled the React frontend with `npm run build` using Vite/Rolldown, confirming 100% type safety and zero warnings in 624ms.
+*   **Key Learnings & Decisions:**
+    *   **Gamified Stat Mapping:** Mapping real inventory metrics (like average durability to Vitality, and wishlist counts to Sense) creates a highly engaging, meaningful gamification loop rather than just static numbers.
+    *   **Strict Local Compiler Checks:** Resolving unused imports (`Award` and `ShieldAlert`) immediately after builds ensures production deployment pipelines do not break on Vercel.
+
+
+

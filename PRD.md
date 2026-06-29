@@ -19,11 +19,11 @@
 
 | Layer                 | Technology                        | Reason / Benefit                                                                                                                       |
 | :-------------------- | :-------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------- |
-| **Frontend UI** | React.js (Vite) + Tailwind CSS    | Interface yang responsif,*clean* ala Notion, dengan animasi transisi yang mulus layaknya menu *status window*.                     |
-| **Backend API** | Python (FastAPI)                  | Menggunakan stack utama Python untuk pemrosesan data yang cepat, asinkronus, dan auto-generate Swagger docs untuk*testing endpoint*. |
-| **Database**    | Supabase (PostgreSQL - Free Tier) | Penyimpanan data relasional gratis, terstruktur, aman, dan mendukung operasi real-time data.                                           |
-| **Storage**     | Cloudinary (Free Tier)            | Dimensi penyimpanan khusus untuk mengompresi dan mengamankan foto aset fisik yang kamu*scan* (upload).                               |
-| **Hosting**     | Vercel & Railway                  | Pipeline deployment otomatis (CI/CD) dari GitHub ke server publik secara gratis dan instan.                                            |
+| **Frontend UI**       | React.js (Vite) + Tailwind CSS v4 | Interface yang responsif, glassmorphic dengan tema warna gelap fantasi ala Solo Leveling System HUD, serta transisi spring yang mulus.   |
+| **Backend API**       | Python (FastAPI)                  | Menggunakan stack utama Python untuk pemrosesan data yang cepat, asinkronus, dan auto-generate Swagger docs untuk testing endpoint.    |
+| **Database**          | Supabase (PostgreSQL - Free Tier) | Penyimpanan data relasional gratis, terstruktur, aman, dan mendukung operasi real-time data.                                           |
+| **Storage**           | Cloudinary (Free Tier)            | Dimensi penyimpanan khusus untuk mengompresi dan mengamankan foto aset fisik yang kamu scan (upload).                                  |
+| **Hosting**           | Vercel & Railway                  | Pipeline deployment otomatis (CI/CD) dari GitHub ke server publik secara gratis dan instan.                                            |
 
 ---
 
@@ -98,17 +98,17 @@ CREATE TABLE trip_items (
 
 ## 4. Feature Requirements & System Logic
 
-### 4.1 Navigation & Mobile Interface (HUD Layout)
+### 4.1 Navigation & Mobile Interface (Solo Leveling HUD Layout)
 
-Menggunakan *Bottom Navigation Bar* persisten yang dioptimalkan untuk akses satu jempol di layar HP.
+Menggunakan *Bottom Navigation Bar* persisten yang dioptimalkan untuk akses satu jempol di layar HP dengan tema warna ungu-cyan gelap ala *Shadow Monarch*.
 
 **Struktur Menu HUD:**
 
-* **Home (Dashboard):** Menampilkan statistik Item Box (Total item, active quest, dan jalan pintas acak armor/OOTD hari ini).
-* **Wardrobe (Armor Section):** Ruang penyimpanan khusus pakaian, celana, jaket, sepatu, dan aksesori fashion.
-* **Gear (Equipment Section):** Gudang penyimpanan alat non-baju (Alat mendaki, perkakas touring, gadget WFC esensial).
+* **Home (Dashboard):** Menampilkan **SYSTEM STATUS: INTERFACE ACTIVE** dengan indikator `LV. X`, XP progress bar, low durability warning center, dan active quest logs.
+* **Wardrobe (Armor Section):** Ruang penyimpanan pakaian (Top, Bottom, Outer, Shoes) dengan border menyala sesuai tingkat kelangkaan (S-Rank hingga D-Rank).
+* **Gear (Equipment Section):** Gudang penyimpanan alat non-baju dengan filtrasi tag.
 * **Wishlist (Bounty List):** Daftar barang incaran lengkap dengan kalkulasi target dana yang harus dikumpulkan.
-* **Profile (Status Window):** Menampilkan analisis investasi barang (Worth-it Matrix) dan manajemen tag global.
+* **Profile (Status Window):** Menampilkan antarmuka **Status Window** Sung Jinwoo dengan pembagian statistik (STR, AGI, VIT, INT, SEN) yang terpetakan secara dinamis dari aset fisik, serta fitur alokasi poin status interaktif.
 
 ### 4.2 Module: Magic Tagging System (Faceted Filter)
 
@@ -150,10 +150,19 @@ Sistem secara otomatis menghitung umur barang sejak tanggal pembelian (`purchase
 * 🟡 **Yellow (Low Durability):** Durasi pemakaian sudah lewat 50%. UI menampilkan pesan peringatan: *"Sudah berumur X bulan, cek sisa pemakaian sebelum memulai quest!"*
 * 🔴 **Red (Depleted):** Melewati batas waktu estimasi pemakaian.
 
-### 4.7 Module: Worth-it Analytics (The Status Board)
+### 4.7 Worth-it Analytics & Status Window (The Status Board)
 
 * **Bounty Gold Required:** Menghitung akumulasi total dana riil yang kamu butuhkan untuk menebus seluruh barang impian di daftar wishlist (menghitung total harga dari link bertanda `is_cheapest`).
 * **Legendary Investment Matrix:** Daftar etalase khusus yang otomatis menampilkan barang-barang lama milikmu yang memiliki `rating_worth = 5` dengan usia kepemilikan sudah di atas 6 atau 12 bulan. Ini merepresentasikan *gear* terbaik yang terbukti paling berharga dan awet sepanjang petualanganmu.
+* **Solo Leveling Status Window:** Konversi halaman profil menjadi panel status pemburu (*Hunter Status*):
+  * **Level:** Dihitung dari jumlah total `Owned Items`.
+  * **STR (Strength):** `ownedCount * 2` (arsenal senjata/gear fisik).
+  * **AGI (Agility):** `wardrobeCount * 2` (mobilitas padupadan pakaian).
+  * **VIT (Vitality):** `averageDurability` (kondisi rata-rata seluruh barang).
+  * **INT (Intelligence):** `legendaryCount * 5` (investasi barang berharga S-Class).
+  * **SEN (Sense):** `wishlistCount * 3` (kepekaan berburu barang incaran baru).
+  * **FATIGUE:** Tingkat kelelahan yang dihitung dinamis berdasarkan persentase barang yang butuh perawatan (durability warning/depleted).
+  * **Stat Point Allocation:** Fitur kosmetik interaktif untuk mengalokasikan poin stat sisa (`+` button) dengan feedback notifikasi instan dari sistem.
 
 ---
 

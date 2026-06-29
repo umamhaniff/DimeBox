@@ -47,28 +47,60 @@ export const ItemCard: React.FC<ItemCardProps> = ({ item, onEdit, onDelete, onBu
     }
   }
 
+  const getRarityClass = () => {
+    if (item.status === 'Wishlist') return 'border-hud-border hover:border-neon-yellow/60 transition-all duration-300';
+    switch (item.rating_worth) {
+      case 5: return 'rarity-s';
+      case 4: return 'rarity-a';
+      case 3: return 'rarity-b';
+      case 2: return 'rarity-c';
+      case 1:
+      default: return 'rarity-d';
+    }
+  }
+
+  const getRarityBadge = () => {
+    if (item.status === 'Wishlist') return 'BOUNTY';
+    switch (item.rating_worth) {
+      case 5: return 'S-RANK';
+      case 4: return 'A-RANK';
+      case 3: return 'B-RANK';
+      case 2: return 'C-RANK';
+      case 1:
+      default: return 'D-RANK';
+    }
+  }
+
+  const getRarityBadgeColor = () => {
+    if (item.status === 'Wishlist') return 'text-neon-yellow border-neon-yellow/30 bg-neon-yellow-dim';
+    switch (item.rating_worth) {
+      case 5: return 'text-neon-yellow border-neon-yellow/30 bg-neon-yellow-dim';
+      case 4: return 'text-neon-purple border-neon-purple/30 bg-neon-purple-dim';
+      case 3: return 'text-neon-cyan border-neon-cyan/30 bg-neon-cyan-dim';
+      case 2: return 'text-neon-green border-neon-green/30 bg-neon-green-dim';
+      case 1:
+      default: return 'text-hud-text-muted border-hud-border bg-hud-bg';
+    }
+  }
+
   return (
-    <div className="hud-corner-box bg-hud-panel border-hud-border p-4 rounded relative hover:border-neon-cyan transition-all duration-300 group flex flex-col justify-between">
+    <div className={`hud-corner-box bg-hud-panel/75 backdrop-blur-md p-4 rounded relative transition-all duration-300 group flex flex-col justify-between hover:scale-[1.02] hover:-translate-y-0.5 ${getRarityClass()}`}>
       <div className="hud-corner-bottom" />
       
       {/* Top Section: Category & Status */}
       <div className="flex justify-between items-center mb-3">
-        <span className="text-[9px] uppercase tracking-widest text-hud-text-muted font-mono bg-hud-bg px-1.5 py-0.5 rounded border border-hud-border">
+        <span className="text-[9px] uppercase tracking-widest text-hud-text-muted font-mono bg-hud-bg/85 px-1.5 py-0.5 rounded border border-hud-border">
           {item.category}{item.category === 'Wardrobe' && item.wardrobe_class ? ` :: ${item.wardrobe_class}` : ''}
         </span>
         <span
-          className={`text-[9px] uppercase tracking-widest font-bold font-mono px-1.5 py-0.5 rounded border ${
-            item.status === 'Owned'
-              ? 'bg-neon-green-dim text-neon-green border-neon-green/30'
-              : 'bg-neon-yellow-dim text-neon-yellow border-neon-yellow/30'
-          }`}
+          className={`text-[9px] uppercase tracking-widest font-bold font-mono px-1.5 py-0.5 rounded border ${getRarityBadgeColor()}`}
         >
-          {item.status}
+          {getRarityBadge()}
         </span>
       </div>
 
       {/* Image / Thumbnail placeholder */}
-      <div className="aspect-video w-full bg-hud-bg border border-hud-border rounded overflow-hidden mb-3 relative flex items-center justify-center">
+      <div className="aspect-video w-full bg-hud-bg/90 border border-hud-border rounded overflow-hidden mb-3 relative flex items-center justify-center">
         {item.image_url ? (
           <img
             src={item.image_url}
@@ -78,7 +110,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({ item, onEdit, onDelete, onBu
         ) : (
           <div className="text-hud-text-muted flex flex-col items-center gap-1">
             <Layers className="w-8 h-8 opacity-40" />
-            <span className="text-[9px] uppercase tracking-widest">No Physical Scan</span>
+            <span className="text-[9px] uppercase tracking-widest font-hud">No Physical Scan</span>
           </div>
         )}
         
@@ -93,7 +125,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({ item, onEdit, onDelete, onBu
       </div>
 
       {/* Item Title */}
-      <h3 className="text-sm font-bold text-hud-text-bright tracking-wide mb-1 group-hover:text-neon-cyan transition-colors">
+      <h3 className="text-sm font-bold text-hud-text-bright tracking-wide mb-1 group-hover:text-neon-cyan transition-colors truncate">
         {item.name}
       </h3>
 
@@ -126,7 +158,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({ item, onEdit, onDelete, onBu
         <div className="space-y-1 mb-3">
           <div className="flex justify-between text-[10px] font-mono">
             <span className="text-hud-text-muted uppercase tracking-wider">Target Price</span>
-            <span className="text-neon-yellow font-bold">
+            <span className="text-neon-yellow font-bold glow-text-yellow">
               💰 Rp {item.wishlist_links[0].price.toLocaleString('id-ID')}
             </span>
           </div>
@@ -157,7 +189,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({ item, onEdit, onDelete, onBu
               className={`w-3.5 h-3.5 ${
                 i < (item.rating_worth ?? 0)
                   ? 'text-neon-yellow fill-neon-yellow/30'
-                  : 'text-hud-text-muted opacity-30'
+                  : 'text-hud-text-muted opacity-20'
               }`}
             />
           ))}

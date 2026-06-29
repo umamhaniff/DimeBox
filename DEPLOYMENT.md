@@ -57,10 +57,12 @@ Vercel akan meng-hosting antarmuka React PWA secara statis dan menghubungkannya 
    * **Project Name**: Ubah nama proyek menjadi `dimebox` (ini akan menjadi domain utama aplikasi kamu).
    * **Framework Preset**: Pilih **Vite** (otomatis terdeteksi).
    * **Root Directory**: Klik tombol **Edit**, pilih folder `frontend`, lalu klik **Continue**.
-4. Buka bagian **Environment Variables** dan tambahkan tiga variabel berikut:
+4. Buka bagian **Environment Variables** dan tambahkan variabel-variabel berikut:
    * **`VITE_SUPABASE_URL`**: `<PROJECT_URL_SUPABASE>`.
    * **`VITE_SUPABASE_ANON_KEY`**: `<ANON_KEY_SUPABASE>`.
    * **`VITE_API_URL`**: `<URL_API_VERCEL_DARI_LANGKAH_2>` *(Masukkan URL proyek backend yang disalin di Langkah 2, contoh: `https://dimebox-api.vercel.app`. **PENTING: Jangan tambahkan tanda garis miring `/` di akhir URL**)*.
+   * **`VITE_CLOUDINARY_CLOUD_NAME`**: `<CLOUD_NAME_CLOUDINARY>` *(Optional, untuk menyimpan foto hasil scan kamera)*.
+   * **`VITE_CLOUDINARY_UPLOAD_PRESET`**: `<UPLOAD_PRESET_CLOUDINARY>` *(Optional, untuk upload preset tanpa tanda tangan / unsigned)*.
 5. Klik tombol **Deploy** dan tunggu proses build React selesai (~30 detik).
 
 ---

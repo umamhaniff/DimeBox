@@ -138,6 +138,7 @@ export const ItemModal: React.FC<ItemModalProps> = ({ isOpen, onClose, onSave, i
 
   // Camera states
   const videoRef = useRef<HTMLVideoElement>(null)
+  const cameraInputRef = useRef<HTMLInputElement>(null)
   const [isCameraActive, setIsCameraActive] = useState(false)
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null)
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('environment')
@@ -175,6 +176,21 @@ export const ItemModal: React.FC<ItemModalProps> = ({ isOpen, onClose, onSave, i
 
   const startCamera = async (mode = facingMode) => {
     setError(null)
+    
+    // Check if WebRTC is supported and we are in a secure context (HTTPS or localhost)
+    const isSecureContext = window.isSecureContext
+    const hasGetUserMedia = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)
+
+    if (!isSecureContext || !hasGetUserMedia) {
+      console.warn('WebRTC camera not supported in insecure context or not available. Falling back to native device camera.')
+      if (cameraInputRef.current) {
+        cameraInputRef.current.click()
+      } else {
+        setError('Camera access not supported on this device/browser.')
+      }
+      return
+    }
+
     setIsCameraActive(true)
     
     if (cameraStream) {
@@ -195,9 +211,28 @@ export const ItemModal: React.FC<ItemModalProps> = ({ isOpen, onClose, onSave, i
         videoRef.current.srcObject = stream
       }
     } catch (err: any) {
-      console.error('Error accessing camera:', err)
-      setError('Failed to access camera. Please check camera permissions.')
-      setIsCameraActive(false)
+      console.warn('Failed to access camera with facingMode constraint, trying generic video...', err)
+      try {
+        // Fallback 1: Try getting any available camera without facingMode or resolution constraints
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: false,
+        })
+        setCameraStream(stream)
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream
+        }
+      } catch (fallbackErr: any) {
+        console.error('All WebRTC camera attempts failed:', fallbackErr)
+        // Fallback 2: Fallback to native device camera app via HTML5 file input
+        if (cameraInputRef.current) {
+          console.log('Falling back to native HTML5 camera capture')
+          cameraInputRef.current.click()
+        } else {
+          setError('Failed to access camera. Please check camera permissions.')
+        }
+        setIsCameraActive(false)
+      }
     }
   }
 
@@ -630,6 +665,16 @@ export const ItemModal: React.FC<ItemModalProps> = ({ isOpen, onClose, onSave, i
                     [SYSTEM ALERT: Scanner offline. Reconnect to sync physical assets]
                   </div>
                 )}
+
+                {/* Hidden native camera capture fallback input */}
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  ref={cameraInputRef}
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
 
                 {/* File upload container */}
                 <div className="border border-dashed border-hud-border hover:border-neon-cyan/50 rounded p-4 bg-hud-bg/20 transition-all text-center relative flex flex-col items-center justify-center min-h-[90px]">

@@ -83,18 +83,18 @@ Every feature of DimeBox has been verified for compile-safety, type-safety, and 
 *   **Status:** 🟢 **Verified**. Verified type-safe module imports and stateless token validation.
 
 ### 2. Dashboard HUD (Home)
-*   **Mechanism:** Displays character levels (based on inventory size), active quest progress bars, durability alerts, and quick actions.
+*   **Mechanism:** Displays **SYSTEM STATUS: INTERFACE ACTIVE** with `LV. X` (calculated from inventory size), title status (e.g. S-Rank Shadow Monarch), XP progression bar, real-time durability warning center, and active quest logs.
 *   **Status:** 🟢 **Verified**. Automatically aggregates statistics from the database.
 
 ### 3. Wardrobe & OOTD Combination Lab
-*   **Sub-classification:** Items are categorized into `Top`, `Bottom`, `Outer`, and `Shoes`.
+*   **Sub-classification:** Items are categorized into `Top`, `Bottom`, `Outer`, and `Shoes` with custom border glows based on rarity rating (S-Rank Gold, A-Rank Purple, B-Rank Cyan, C-Rank Green, D-Rank Grey).
 *   **Aesthetic Color Harmony Engine:** Checks HSL values of items to prevent saturated color clashes (discordant hues between 35° and 145° apart) unless neutral tones (black, white, grey, beige) are present.
 *   **Smart Auto-Armor Recommendation:** Recommends a daily outfit by matching shared tags and verifying color harmony.
 *   **OOTD Mixer Canvas:** Interactive 4-slot canvas to preview and save outfit loadouts (POST `/outfits`).
 *   **Status:** 🟢 **Verified**. Checked HSL conversion, clashing algorithms, and outfit persistence.
 
 ### 4. Gear (Equipment Section)
-*   **Mechanism:** Grid showing non-clothing physical gear (gadgets, tools, backpacking gear) with multi-tag faceted filters.
+*   **Mechanism:** Grid showing non-clothing physical gear (gadgets, tools, backpacking gear) styled as inventory slots with rarity tiers.
 *   **Status:** 🟢 **Verified**. Seamless tag filtration and search.
 
 ### 5. Bounty Radar (Wishlist System)
@@ -104,19 +104,30 @@ Every feature of DimeBox has been verified for compile-safety, type-safety, and 
 
 ### 6. Quest Packing Checklist (Trips)
 *   **Mechanism:** Create a new Quest (Trip) with activity tags (e.g., `Mendaki`, `Touring`). The system automatically copies all `Owned` items sharing those tags into `trip_items`.
-*   **Interactive Checklist:** Toggles packing status (`is_packed`) in real-time with a live progress bar. Supports adding/removing items on the fly.
+*   **Interactive Checklist:** Toggles packing status (`is_packed`) in real-time with a live progress bar. Styled as a System Quest log.
 *   **Status:** 🟢 **Verified**. Backed by single-query PostgreSQL JSON aggregation for high performance.
 
 ### 7. Consumables & Durability Alert
 *   **Toiletries / Consumables:** Durability decays over time based on `expiry_reminder_months` since `purchase_date`.
-*   **Gear / Wardrobe:** Durability decays based on ownership duration (10% per year for Gear, 15% for Wardrobe).
+*   **Gear / Wardrobe:** Durability decays based on ownership duration (10% per year for Gear, 15% for Wardrobe). Safe date parsing prevents `NaN` values.
 *   *HUD Indicators:*
     *   🟢 **Optimal (>= 50%):** Healthy condition.
     *   🟡 **Warning (< 50%):** Displays: *"Sudah berumur X bulan, cek sisa pemakaian!"*
     *   🔴 **Depleted (0%):** Lifespan exceeded.
 *   **Status:** 🟢 **Verified**. Algorithm verified in `src/utils/durability.ts`.
 
-### 8. Cybernetic Live Camera Scanner
+### 8. Hunter Status Window (Profile)
+*   **Mechanism:** Transformed into a classic Solo Leveling **Status Window** containing custom stats mapped directly to inventory statistics:
+    *   `STR` (Strength) = `ownedCount * 2` (size of physical arsenal)
+    *   `AGI` (Agility) = `wardrobeCount * 2` (wardrobe items)
+    *   `VIT` (Vitality) = `averageDurability` (overall wear condition)
+    *   `INT` (Intelligence) = `legendaryCount * 5` (investment in S-Class assets)
+    *   `SEN` (Sense) = `wishlistCount * 3` (wishlist hunt)
+    *   `FATIGUE` = `depletedCount / ownedCount * 100` (wear and maintenance fatigue)
+*   **Interactive HUD:** Includes an interactive client-side **Stat Points Allocation HUD** using cosmetic `+` buttons and a reset trigger.
+*   **Status:** 🟢 **Verified**. High-fidelity gamification layer with instant system feedback.
+
+### 9. Cybernetic Live Camera Scanner
 *   **Mechanism:** Implements a WebRTC camera feed inside the item modal with a futuristic cybernetic HUD overlay.
 *   **Immersive Feedback:** Captures photos with a white screen flash and a retro synth click sound generated dynamically using the native **Web Audio API** (zero dependencies).
 *   **Client-side Compression:** Compressed via HTML5 Canvas before uploading to Cloudinary to conserve mobile bandwidth.
