@@ -1,4 +1,5 @@
 import logging
+import os
 import asyncpg
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
@@ -10,11 +11,14 @@ from app.routers import items, tags, outfits, trips
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("dimebox")
 
+root_path = "/api" if os.environ.get("VERCEL") else ""
+
 app = FastAPI(
     title="DimeBox Pocket Dimension API",
     description="Backend API for DimeBox - Physical inventory, gear, capsule wardrobe, and travel packing list tracker.",
     version="0.1.0",
-    lifespan=lifespan
+    lifespan=lifespan,
+    root_path=root_path
 )
 
 # Configure CORS (Cross-Origin Resource Sharing)
