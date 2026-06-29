@@ -15,7 +15,8 @@ class Database:
                 settings.database_url,
                 min_size=2,
                 max_size=10,
-                max_inactive_connection_lifetime=300.0
+                max_inactive_connection_lifetime=300.0,
+                statement_cache_size=0  # Required for PgBouncer / Supabase Pooler transaction mode (port 6543)
             )
 
     async def disconnect(self):
