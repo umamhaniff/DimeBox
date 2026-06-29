@@ -1,12 +1,21 @@
-# 🧠 DimeBox (Dimension Item Box)
+<p align="center">
+  <img src="logo.svg" alt="DimeBox Logo" width="180" />
+</p>
 
-[![React](https://img.shields.io/badge/React-19.0-blue.svg?logo=react)](https://react.dev/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.110.0-green.svg?logo=fastapi)](https://fastapi.tiangolo.com/)
-[![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-blueviolet.svg?logo=supabase)](https://supabase.com/)
-[![Tailwind CSS v4](https://img.shields.io/badge/Tailwind_CSS-v4.0-38bdf8.svg?logo=tailwind-css)](https://tailwindcss.com/)
-[![PWA](https://img.shields.io/badge/PWA-Ready-orange.svg?logo=progressive-web-apps)](https://web.dev/progressive-web-apps/)
+# <p align="center">🧠 DimeBox (Dimension Item Box)</p>
 
-> **"An Infinite Pocket Dimension for Your Real-Life Gear & Wardrobe"**
+<p align="center">
+  <img src="https://img.shields.io/badge/Version-v0.1.0--alpha-blueviolet?style=flat-square&logo=semver" alt="Version" />
+  <img src="https://img.shields.io/badge/React-19.0-blue.svg?style=flat-square&logo=react" alt="React" />
+  <img src="https://img.shields.io/badge/FastAPI-0.110.0-green.svg?style=flat-square&logo=fastapi" alt="FastAPI" />
+  <img src="https://img.shields.io/badge/Supabase-PostgreSQL-blueviolet.svg?style=flat-square&logo=supabase" alt="Supabase" />
+  <img src="https://img.shields.io/badge/Tailwind_CSS-v4.0-38bdf8.svg?style=flat-square&logo=tailwind-css" alt="Tailwind" />
+  <img src="https://img.shields.io/badge/PWA-Ready-orange.svg?style=flat-square&logo=progressive-web-apps" alt="PWA" />
+</p>
+
+<p align="center">
+  <i>"An Infinite Pocket Dimension for Your Real-Life Gear & Wardrobe"</i>
+</p>
 
 **DimeBox** is a mobile-first Progressive Web App (PWA) designed to track physical inventory, gear, capsule wardrobe, and travel packing lists using an RPG/Anime-inspired HUD interface. It gamifies the way you organize your physical belongings by treating them as "equipment slots" and "quest items".
 
