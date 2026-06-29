@@ -9,6 +9,9 @@ class Settings(BaseSettings):
     # Supabase JWT Secret (from Project Settings -> API)
     supabase_jwt_secret: str = Field("", validation_alias="SUPABASE_JWT_SECRET")
 
+    # Supabase Project URL (from Project Settings -> API)
+    supabase_url: str = Field("", validation_alias="VITE_SUPABASE_URL")
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
