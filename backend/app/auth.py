@@ -36,6 +36,16 @@ def get_current_user_id(credentials: HTTPAuthorizationCredentials = Depends(secu
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Session has expired. Please log in again"
         )
+    except jwt.InvalidAlgorithmError as e:
+        try:
+            header = jwt.get_unverified_header(token)
+            token_alg = header.get("alg", "unknown")
+        except Exception:
+            token_alg = "unknown"
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Invalid authentication token: The specified alg value is not allowed. Token alg is '{token_alg}', expected 'HS256'."
+        )
     except jwt.InvalidTokenError as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
